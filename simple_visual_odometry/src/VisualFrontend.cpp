@@ -110,12 +110,7 @@ void VisualFrontend::track(Mat& im_gray, Features2D& newPoints)
 
 	//Set status depending on fb_err and lk error
 	for (size_t i = 0; i < status.size(); i++)
-	{
-		ROS_INFO_STREAM("FB ERROR      : " << fb_err[i]);
-		ROS_INFO_STREAM("over threshold: " << (fb_err[i] <= thresholdFBError));
-		ROS_INFO_STREAM("status        : " << (fb_err[i] <= thresholdFBError) && status[i]);
 		status[i] = (fb_err[i] <= thresholdFBError) && status[i];
-	}
 
 	newPoints = Features2D(oldPoints, nextPts, status);
 

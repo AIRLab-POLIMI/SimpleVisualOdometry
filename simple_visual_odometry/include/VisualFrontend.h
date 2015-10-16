@@ -60,7 +60,7 @@ private:
 
 	//parameters
 	const int thresholdExtraction = 50;
-	const double thresholdFBError = 0.5;
+	const double thresholdFBError = 1.0;
 
 };
 
