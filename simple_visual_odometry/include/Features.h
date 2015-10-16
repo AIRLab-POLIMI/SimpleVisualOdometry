@@ -39,7 +39,6 @@ public:
 			std::vector<Type> newPoints,
 			std::vector<unsigned char> status)
 	{
-		points = newPoints;
 		ids.resize(newPoints.size());
 
 		unsigned int j = 0;
@@ -48,8 +47,9 @@ public:
 			if(status[i])
 			{
 				unsigned int id_j = oldFeatures.getId(i);
-				ids[j] = id_j;
+				ids.push_back(id_j);
 				indexes[id_j] = j;
+				points.push_back(newPoints[i]);
 				j++;
 			}
 		}
