@@ -33,11 +33,14 @@
 
 #include <opencv2/opencv.hpp>
 
+#include "VisualFrontend.h"
+
 class VisualOdometryLogic
 {
 public:
 	VisualOdometryLogic(std::string imageTopic, ros::NodeHandle& n);
-	virtual void handleImage(const sensor_msgs::ImageConstPtr& msg, const sensor_msgs::CameraInfoConstPtr& info_msg);
+	virtual void handleImage(const sensor_msgs::ImageConstPtr& msg,
+				const sensor_msgs::CameraInfoConstPtr& info_msg);
 	bool getImage(const sensor_msgs::ImageConstPtr& msg,
 				cv_bridge::CvImagePtr& cv_ptr,
 				cv_bridge::CvImagePtr& cv_ptr_color);
@@ -50,8 +53,7 @@ protected:
 	void display(cv_bridge::CvImagePtr cv_ptr);
 
 private:
-	void drawKeypoints(cv::Mat& frame,
-				const std::vector<cv::KeyPoint>& keypoints,
+	void drawFeatures(cv::Mat& frame, Features2D& features,
 				cv::Scalar colorMatched, cv::Scalar colorNew);
 
 private:
@@ -62,6 +64,9 @@ private:
 	//Pose Tracking
 	tf::Transform T;
 	tf::TransformBroadcaster tfBroadcaster;
+
+	//Visual Frontend
+	VisualFrontend frontend;
 
 	//debug display
 	std::string src_window;

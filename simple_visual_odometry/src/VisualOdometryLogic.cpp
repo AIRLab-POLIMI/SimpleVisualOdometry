@@ -61,7 +61,8 @@ void VisualOdometryLogic::handleImage(const sensor_msgs::ImageConstPtr& msg, con
 	{
 		Mat image = cv_ptr->image;
 
-		//featureManager.trackAndFindNew(image);
+		Features2D trackedFeatures;
+		frontend.trackAndExtract(image, trackedFeatures);
 
 		//Track pose
 		//trackPose(info_msg);
@@ -96,8 +97,8 @@ void VisualOdometryLogic::display(cv_bridge::CvImagePtr cv_ptr)
 	//Print debug image
 	Mat coloredImage;
 	coloredImage = cv_ptr->image;
-	//drawKeypoints(coloredImage, featureManager.getKeyPoints(),
-	//			Scalar(255, 0, 0), Scalar(0, 255, 0));
+	drawFeatures(coloredImage, frontend.getCurrentFeatures(),
+				Scalar(255, 0, 0), Scalar(0, 255, 0));
 	imshow(src_window, coloredImage);
 	waitKey(1);
 }
@@ -114,23 +115,20 @@ void VisualOdometryLogic::trackPose(const sensor_msgs::CameraInfoConstPtr& info_
 
 }
 
-void VisualOdometryLogic::drawKeypoints(Mat& frame, const vector<KeyPoint>& keypoints,
+void VisualOdometryLogic::drawFeatures(Mat& frame, Features2D& features,
 			cv::Scalar colorMatched, cv::Scalar colorNew)
 {
 
-	static uint64_t max_id = 0;
-	uint64_t new_max_id = 0;
+	static unsigned int max_id = 0;
+	unsigned int new_max_id = 0;
 
-	for (int j = 0; j < keypoints.size(); j++)
+	for (int j = 0; j < features.size(); j++)
 	{
-	/*	cv::Scalar drawColor =
-					(featureManager.getId(j) > max_id) ?
+		cv::Scalar drawColor = (features.getId(j) > max_id) ?
 								colorNew : colorMatched;
+		circle(frame, features[j], 3, drawColor);
 
-		if (featureManager.getId(j) <= max_id || !hideNew)
-			circle(frame, keypoints[j].pt, 3, drawColor);
-
-		new_max_id = std::max(new_max_id, featureManager.getId(j));*/
+		new_max_id = std::max(new_max_id, features.getId(j));
 	}
 
 	max_id = new_max_id;
@@ -146,20 +144,18 @@ int main(int argc, char *argv[])
 {
 	ros::init(argc, argv, "roamros_extractor");
 
-	if (argc < 4)
+	if (argc < 2)
 	{
-		ROS_FATAL("Three arguments needed: camera_source, keyframe_feature_percentage, force_extraction");
+		ROS_FATAL("argument needed: camera_source");
 		return -1;
 	}
 
 	ros::NodeHandle n;
 	string imageTopic = argv[1];
-	double keyFramePercentage = std::atof(argv[2]);
-	bool forceExtraction = (std::atoi(argv[3]) == 0) ? false : true;
 
 	VisualOdometryLogic logic(imageTopic, n);
 
-	ROS_INFO("Feature extraction node started");
+	ROS_INFO("Visual Odometry node started");
 
 	ros::spin();
 }

@@ -1,0 +1,27 @@
+<!-- Launch file to run the feature extraction system -->
+<launch>
+	<!-- Arguments -->
+	<arg name="camera_source" default="/prosilica/" />
+	
+	
+	<!-- Camera processing -->
+	<group ns="$(arg camera_source)">
+		<node name="image_proc" 
+	              pkg="image_proc" 
+	              type="image_proc" />
+	</group>
+	
+	<!-- System nodes -->
+	<node name="simple_visual_odometry" 
+              pkg="simple_visual_odometry" 
+              type="simple_visual_odometry" 
+              args="$(arg camera_source)" 
+              output="screen"/>
+    <!-- launch-prefix="gdb -ex run - - args" --> 	
+    
+    <node name="rviz" 
+          pkg="rviz" 
+          type="rviz"
+          respawn="true"/>	
+
+</launch> 

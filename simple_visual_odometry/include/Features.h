@@ -26,19 +26,66 @@
 
 #include<opencv2/opencv.hpp>
 
+template<class Type>
 class Features
 {
 public:
-	Features();
-
-	inline std::vector<cv::KeyPoint> getKeyPoints()
+	Features()
 	{
-		return keyPoints;
+
+	}
+
+	Features(Features<Type>& oldFeatures,
+			std::vector<Type> newPoints,
+			std::vector<unsigned char> status)
+	{
+		points = newPoints;
+		ids.resize(newPoints.size());
+
+		unsigned int j = 0;
+		for(unsigned int i = 0; i < oldFeatures.size(); i++)
+		{
+			if(status[i])
+			{
+				unsigned int id_j = oldFeatures.getId(i);
+				ids[j] = id_j;
+				indexes[id_j] = j;
+				j++;
+			}
+		}
+	}
+
+	void addPoint(const Type& point, unsigned int id)
+	{
+		unsigned int index = points.size();
+		points.push_back(point);
+		ids.push_back(id);
+		indexes[id] = index;
+	}
+
+	Type& operator[](unsigned int i)
+	{
+		return points[i];
+	}
+
+	typename std::vector<Type>::iterator begin()
+	{
+		return points.begin();
+	}
+
+	typename std::vector<Type>::iterator end()
+	{
+		return points.end();
+	}
+
+	inline std::vector<Type>& getPoints()
+	{
+		return points;
 	}
 
 	inline unsigned int getId(unsigned int index)
 	{
-		return id[index];
+		return ids[index];
 	}
 
 	inline unsigned int getIndex(unsigned int id)
@@ -46,12 +93,20 @@ public:
 		return indexes[id];
 	}
 
+	inline size_t size()
+	{
+		return points.size();
+	}
+
 private:
-	std::vector<cv::KeyPoint> keyPoints;
-	std::vector<unsigned int> id;
+	std::vector<Type> points;
+	std::vector<unsigned int> ids;
 	std::map<unsigned int, unsigned int> indexes;
 
 };
+
+typedef Features<cv::Point2f> Features2D;
+typedef Features<cv::Point3f> Features3D;
 
 
 
