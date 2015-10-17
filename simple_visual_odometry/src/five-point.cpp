@@ -129,7 +129,10 @@ int recoverPose( InputArray E, InputArray _points1, InputArray _points2, OutputA
     if (!_mask.empty())
     {
         Mat mask = _mask.getMat();
-        std::cout << mask.size() << "," << mask1.size() << std::endl;
+
+        if(mask.cols > mask.rows)
+        	mask = mask.t();
+        //std::cout << mask.size() << "," << mask1.size() << std::endl;
         CV_Assert(mask.size() == mask1.size());
         bitwise_and(mask, mask1, mask1);
         bitwise_and(mask, mask2, mask2);

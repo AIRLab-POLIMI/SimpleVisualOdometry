@@ -16,12 +16,13 @@
               pkg="simple_visual_odometry" 
               type="simple_visual_odometry" 
               args="$(arg camera_source)" 
-              output="screen"/>
+              output="screen"
+              launch-prefix="gdb -ex run --args"/>
     <!-- launch-prefix="gdb -ex run - - args" --> 	
     
-    <node name="rviz" 
+    <!-- node name="rviz" 
           pkg="rviz" 
           type="rviz"
-          respawn="true"/>	
+          respawn="true"/ -->	
 
 </launch> 

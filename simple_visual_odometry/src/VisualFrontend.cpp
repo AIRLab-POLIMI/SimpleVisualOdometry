@@ -38,6 +38,8 @@ VisualFrontend::VisualFrontend()
 
 	//Initialize ID
 	newId = 0;
+
+
 }
 
 void VisualFrontend::trackAndExtract(cv::Mat& im_gray, Features2D& newPoints)

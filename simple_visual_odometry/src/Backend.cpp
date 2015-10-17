@@ -26,6 +26,19 @@
 using namespace cv;
 using namespace std;
 
+inline std::ostream& operator<<(std::ostream& os, const std::vector<unsigned char>& v)
+{
+    if(!v.empty())
+    {
+        size_t i;
+        for (i = 0; i + 1 < v.size(); i++)
+            os << (int) v[i] << ",";
+
+        os << v[i];
+    }
+    return os;
+}
+
 Backend::Backend()
 {
 	computed = false;
@@ -51,7 +64,7 @@ void Backend2D::computeTransformation(Features2D& features)
 			Mat C = recoverCameraFromEssential(featuresOldnorm, featuresNewnorm,
 						mask);
 
-			Features3Dn&& triangulatedPoints = triangulatePoints(featuresOldnorm,
+			Features3Dn&& triangulated = triangulatePoints(featuresOldnorm,
 						featuresNewnorm, C, mask);
 
 			try
@@ -60,7 +73,7 @@ void Backend2D::computeTransformation(Features2D& features)
 
 				if (old3DPoints.size() != 0)
 				{
-					scale = estimateScale(triangulatedPoints);
+					scale = estimateScale(triangulated);
 				}
 
 				t = Mat(scale * C.col(3));
@@ -68,12 +81,12 @@ void Backend2D::computeTransformation(Features2D& features)
 
 				computed = true;
 
-				old3DPoints = triangulatedPoints;
+				old3DPoints = triangulated;
 				oldFeatures = features;
 			}
 			catch(runtime_error& e)
 			{
-				cout << e.what();
+				std::cout << e.what() << std::endl;
 			}
 		}
 
@@ -128,12 +141,19 @@ Mat Backend2D::recoverCameraFromEssential(Features2Dn& oldFeaturesNorm,
 	vector<Vec2d> points1 = oldFeaturesNorm.getPoints();
 	vector<Vec2d> points2 = newFeaturesNorm.getPoints();
 
-	Mat E = findFundamentalMat(points1, points2, mask);
+	//std::cout << "mask = " << mask << std::endl;
+	Mat output;
+	Mat E = findFundamentalMat(points1, points2, CV_FM_RANSAC, 3.0, 0.99, output);
+	//std::cout << output.t() << std::endl;
+
+	output.copyTo(mask);
+	//std::cout << "mask = " << mask << std::endl;
+	//std::cout << "E = " << E << std::endl;
 
 	Mat R_e;
 	Mat t_e;
 
-	recoverPose(E, points1, points2, R_e, t_e, mask);
+	recoverPose(E, points1, points2, R_e, t_e, output);
 
 	Mat C;
 	hconcat(R, t, C);
@@ -150,15 +170,17 @@ Features3Dn Backend2D::triangulatePoints(Features2Dn& oldFeaturesNorm,
 
 	cv::Mat C0 = cv::Mat::eye(3, 4, CV_64FC1);
 
-	cv::Mat points3D(1, oldFeaturesNorm.size(), CV_64FC4);
+	cv::Mat points4D(1, oldFeaturesNorm.size(), CV_64FC4);
 	cv::triangulatePoints(C0, C, oldFeaturesNorm.getPoints(),
-				newFeaturesNorm.getPoints(), points3D);
+				newFeaturesNorm.getPoints(), points4D);
 
-	for (unsigned int i = 0; i < points3D.cols; i++)
+	for (unsigned int i = 0; i < points4D.cols; i++)
 	{
 		if (mask[i])
 		{
-			Vec3d point = points3D.col(i);
+			Vec4d point4d = points4D.col(i);
+			point4d/point4d[3];
+			Vec3d point(point4d[0], point4d[1], point4d[2]);
 			triangulated.addPoint(point, oldFeaturesNorm.getId(i));
 		}
 	}
@@ -223,7 +245,6 @@ double Backend2D::estimateScaleMedian(vector<double>& scaleVector)
 double Backend2D::estimateScaleMean(vector<double>& scaleVector)
 {
 	double scale = 0;
-	unsigned int N = 0;
 
 	for (auto localScale : scaleVector)
 	{

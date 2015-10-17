@@ -51,7 +51,7 @@ VisualOdometryLogic::VisualOdometryLogic(string imageTopic, ros::NodeHandle& n) 
 	src_window = "Extracted Features";
 	namedWindow(src_window, CV_WINDOW_AUTOSIZE);
 
-	//Init Backedn
+	//Init Backend
 	backend = new Backend2D();
 
 }
@@ -136,6 +136,9 @@ void VisualOdometryLogic::trackPose(const sensor_msgs::CameraInfoConstPtr& info_
 						   R(2, 0), R(2, 1), R(2, 2));
 
 		tf::Transform T_new(R_tf, t_tf);
+
+		std::cout << t << std::endl;
+		std::cout << R << std::endl;
 
 		T = T*T_new;
 
