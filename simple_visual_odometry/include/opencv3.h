@@ -24,9 +24,6 @@
 #ifndef INCLUDE_OPENCV3_H_
 #define INCLUDE_OPENCV3_H_
 
-#ifndef OPENCV3_H_
-#define OPENCV3_H_
-
 #include <opencv2/opencv.hpp>
 
 namespace cv

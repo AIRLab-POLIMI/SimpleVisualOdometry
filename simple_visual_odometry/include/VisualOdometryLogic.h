@@ -34,6 +34,7 @@
 #include <opencv2/opencv.hpp>
 
 #include "VisualFrontend.h"
+#include "Backend.h"
 
 class VisualOdometryLogic
 {
@@ -49,7 +50,7 @@ public:
 
 protected:
 	void publishFeatures(const std::string& frame_id, ros::Time stamp);
-	void trackPose(const sensor_msgs::CameraInfoConstPtr& info_msg);
+	void trackPose(const sensor_msgs::CameraInfoConstPtr& info_msg, Features2D& features);
 	void display(cv_bridge::CvImagePtr cv_ptr);
 
 private:
@@ -67,6 +68,9 @@ private:
 
 	//Visual Frontend
 	VisualFrontend frontend;
+
+	//Localization Backend
+	Backend* backend;
 
 	//debug display
 	std::string src_window;

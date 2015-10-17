@@ -25,13 +25,14 @@
 #define INCLUDE_BACKEND_H_
 
 #include "opencv3.h"
+#include "Features.h"
 
 class Backend
 {
 public:
 	Backend();
 
-	void computeTransformation(Features2D& features) = 0;
+	virtual void computeTransformation(Features2D& features) = 0;
 
 	inline bool transformationComputed()
 	{
@@ -53,6 +54,11 @@ public:
 	inline void setK(const cv::Matx33d& K)
 	{
 		Kinv = K.inv();
+	}
+
+	virtual ~Backend()
+	{
+
 	}
 
 protected:
@@ -84,8 +90,8 @@ private:
 
 	double estimateScale(Features3Dn& new3DPoints);
 
-	double estimateScaleMedian(Features3Dn& new3DPoints);
-	double estimateScaleMean(Features3Dn& new3DPoints);
+	double estimateScaleMedian(std::vector<double>& scaleVector);
+	double estimateScaleMean(std::vector<double>& scaleVector);
 
 private:
 	Features2D oldFeatures;

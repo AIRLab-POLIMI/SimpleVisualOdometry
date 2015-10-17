@@ -51,23 +51,30 @@ void Backend2D::computeTransformation(Features2D& features)
 			Mat C = recoverCameraFromEssential(featuresOldnorm, featuresNewnorm,
 						mask);
 
-			Features3Dn& triangulatedPoints = triangulatePoints(featuresOldnorm,
+			Features3Dn&& triangulatedPoints = triangulatePoints(featuresOldnorm,
 						featuresNewnorm, C, mask);
 
-			double scale = 1.0;
-
-			if (old3DPoints.size() != 0)
+			try
 			{
-				scale = estimateScale(triangulatedPoints);
+				double scale = 1.0;
+
+				if (old3DPoints.size() != 0)
+				{
+					scale = estimateScale(triangulatedPoints);
+				}
+
+				t = Mat(scale * C.col(3));
+				R = C(Rect(0, 0, 3, 3));
+
+				computed = true;
+
+				old3DPoints = triangulatedPoints;
+				oldFeatures = features;
 			}
-
-			t = scale * C.col(3);
-			R = C(Rect(0, 0, 3, 3));
-
-			computed = true;
-
-			old3DPoints = triangulatePoints;
-			oldFeatures = features;
+			catch(runtime_error& e)
+			{
+				cout << e.what();
+			}
 		}
 
 	}
@@ -162,12 +169,7 @@ Features3Dn Backend2D::triangulatePoints(Features2Dn& oldFeaturesNorm,
 
 double Backend2D::estimateScale(Features3Dn& new3DPoints)
 {
-	return estimateScaleMedian(new3DPoints);
-}
-
-double Backend2D::estimateScaleMedian(Features3Dn& new3DPoints)
-{
-	vector<double> medianV;
+	vector<double> scaleVector;
 
 	for (unsigned int i = 0; i < new3DPoints.size(); i++)
 	{
@@ -186,62 +188,47 @@ double Backend2D::estimateScaleMedian(Features3Dn& new3DPoints)
 			double localScale = num / den;
 
 			if (isfinite(localScale))
-				medianV.push_back(localScale);
+				scaleVector.push_back(localScale);
 		}
 
 	}
 
-	int N = medianV.size();
+	int N = scaleVector.size();
 
 	if (N == 0)
 		throw std::runtime_error("N == 0!!!!");
 
-	std::sort(medianV.begin(), medianV.end());
+	return estimateScaleMedian(scaleVector);
+}
+
+double Backend2D::estimateScaleMedian(vector<double>& scaleVector)
+{
+	unsigned int N = scaleVector.size();
+
+	std::sort(scaleVector.begin(), scaleVector.end());
 
 	int index = N / 2;
 
 	if (N % 2 == 0)
 	{
-		return 0.5 * medianV[index] + 0.5 * medianV[index - 1];
+		return 0.5 * scaleVector[index] + 0.5 * scaleVector[index - 1];
 	}
 	else
 	{
-		return medianV[index];
+		return scaleVector[index];
 	}
 
 }
 
-double Backend2D::estimateScaleMean(Features3Dn& new3DPoints)
+double Backend2D::estimateScaleMean(vector<double>& scaleVector)
 {
-	double scale;
+	double scale = 0;
 	unsigned int N = 0;
 
-	for (unsigned int i = 0; i < new3DPoints.size(); i++)
+	for (auto localScale : scaleVector)
 	{
-		for (unsigned int j = i + 1; j < new3DPoints.size(); j++)
-		{
-			double den = cv::norm(new3DPoints[i] - new3DPoints[j]);
-
-			unsigned int id_i = new3DPoints.getId(i);
-			unsigned int id_j = new3DPoints.getId(j);
-
-			unsigned int index_i = old3DPoints.getIndex(id_i);
-			unsigned int index_j = old3DPoints.getIndex(id_j);
-
-			double num = cv::norm(old3DPoints[index_i] - old3DPoints[index_j]);
-
-			double localScale = num / den;
-
-			if (isfinite(localScale))
-			{
-				scale += localScale;
-				N++;
-			}
-		}
+		scale += localScale;
 	}
 
-	if (N == 0)
-		throw std::runtime_error("N == 0!!!!");
-
-	return scale/static_cast<double>(N);
+	return scale / static_cast<double>(scaleVector.size());
 }
