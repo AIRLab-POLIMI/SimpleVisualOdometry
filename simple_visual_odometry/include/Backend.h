@@ -27,6 +27,8 @@
 #include "opencv3.h"
 #include "Features.h"
 
+#include "FeaturesPublisher.h"
+
 class Backend
 {
 public:
@@ -96,6 +98,8 @@ private:
 private:
 	Features2D oldFeatures;
 	Features3Dn old3DPoints;
+
+	FeaturesPublisher publisher;
 
 };
 

@@ -119,7 +119,9 @@ void VisualOdometryLogic::trackPose(const sensor_msgs::CameraInfoConstPtr& info_
 	cameraModel.fromCameraInfo(info_msg);
 
 	//Compute Camera translation
-	backend->setK(cameraModel.fullIntrinsicMatrix());
+	Matx34d P = cameraModel.fullProjectionMatrix();
+	Matx33d K = P.get_minor<3, 3>(0, 0);
+	backend->setK(K);
 	backend->computeTransformation(trackedFeatures, frontend.getCurrentFeatures());
 
 
@@ -131,6 +133,7 @@ void VisualOdometryLogic::trackPose(const sensor_msgs::CameraInfoConstPtr& info_
 
 		//Compute new camera pose
 		tf::Vector3 t_tf(t[0], t[1], t[2]);
+
 		tf::Matrix3x3 R_tf(R(0, 0), R(0, 1), R(0, 2),
 						   R(1, 0), R(1, 1), R(1, 2),
 						   R(2, 0), R(2, 1), R(2, 2));

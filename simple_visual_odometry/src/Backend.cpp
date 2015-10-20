@@ -26,17 +26,41 @@
 using namespace cv;
 using namespace std;
 
+class low_parallax_exception : public Exception
+{
+
+};
+
+class no_points_exception : public Exception
+{
+
+};
+
 inline std::ostream& operator<<(std::ostream& os, const std::vector<unsigned char>& v)
 {
     if(!v.empty())
     {
         size_t i;
         for (i = 0; i + 1 < v.size(); i++)
-            os << (int) v[i] << ",";
+            os << (v[i] != 0) << ",";
 
         os << v[i];
     }
     return os;
+}
+
+double countInliers(const std::vector<unsigned char>& v)
+{
+	double count = 0;
+	for(auto in : v)
+	{
+		if(in)
+			count += 1.0;
+	}
+
+	count *= 100.0/v.size();
+
+	return count;
 }
 
 Backend::Backend()
@@ -52,6 +76,9 @@ void Backend2D::computeTransformation(Features2D& trackedFeatures, Features2D& f
 	}
 	else
 	{
+		static int debug1 = 0;
+		static int debug2 = 0;
+
 		Features2Dn featuresOldnorm;
 		Features2Dn featuresNewnorm;
 
@@ -60,12 +87,18 @@ void Backend2D::computeTransformation(Features2D& trackedFeatures, Features2D& f
 
 		if (deltaMean > 5.0)
 		{
-			vector<unsigned char> mask(featuresOldnorm.size(), 1);
+			vector<unsigned char> mask;
 			Mat C = recoverCameraFromEssential(featuresOldnorm, featuresNewnorm,
 						mask);
 
+			std::cout << "featuresOldnorm " << featuresOldnorm.size() << std::endl;
+			std::cout << "featuresNewnorm " << featuresNewnorm.size() << std::endl;
+			std::cout << "inliers " << countInliers(mask) << "%" << std::endl;
+
 			Features3Dn&& triangulated = triangulatePoints(featuresOldnorm,
 						featuresNewnorm, C, mask);
+
+			debug1++; //TODO levami
 
 			try
 			{
@@ -76,7 +109,7 @@ void Backend2D::computeTransformation(Features2D& trackedFeatures, Features2D& f
 					scale = estimateScale(triangulated);
 				}
 
-				std::cout << "scale=" << scale << std::endl;
+				//std::cout << "scale=" << scale << std::endl;
 
 				t = Mat(scale * C.col(3));
 				R = C(Rect(0, 0, 3, 3));
@@ -84,11 +117,19 @@ void Backend2D::computeTransformation(Features2D& trackedFeatures, Features2D& f
 				computed = true;
 
 				old3DPoints = triangulated;
+
+				publisher.publishFeatureMarkers(old3DPoints);
 				oldFeatures = features;
 			}
-			catch(runtime_error& e)
+			catch(low_parallax_exception& e)
 			{
-				//std::cout << e.what() << std::endl;
+				std::cout << "low parallax" << std::endl;
+			}
+			catch(no_points_exception& e)
+			{
+				debug2++;
+				old3DPoints = Features3Dn();
+				std::cout << "no points " << debug2 << "/" << debug1 << std::endl;
 			}
 		}
 
@@ -149,16 +190,21 @@ Mat Backend2D::recoverCameraFromEssential(Features2Dn& oldFeaturesNorm,
 	vector<Vec2d> points1 = oldFeaturesNorm.getPoints();
 	vector<Vec2d> points2 = newFeaturesNorm.getPoints();
 
+	std::cout << "points1 " << points1.size() << std::endl;
+	std::cout << "points2 " << points2.size() << std::endl;
 	//std::cout << "mask = " << mask << std::endl;
-	Mat E = findFundamentalMat(points1, points2, CV_FM_RANSAC, 3.0, 0.99, mask);
-
-	//std::cout << "mask = " << mask << std::endl;
+	Mat E = findFundamentalMat(points1, points2, FM_RANSAC, 1.0, 0.9, mask);
+	std::cout << "inliers " << countInliers(mask) << "%" << std::endl;
+	std::cout << "mask = " << mask << std::endl;
 	//std::cout << "E = " << E << std::endl;
 
 	Mat R_e;
 	Mat t_e;
 
 	recoverPose(E, points1, points2, R_e, t_e, mask);
+
+	//std::cout << t_e << std::endl;
+	//std::cout << R_e << std::endl;
 
 	Mat C;
 	hconcat(R_e, t_e, C);
@@ -174,6 +220,8 @@ Features3Dn Backend2D::triangulatePoints(Features2Dn& oldFeaturesNorm,
 	Features3Dn triangulated;
 
 	cv::Mat C0 = cv::Mat::eye(3, 4, CV_64FC1);
+
+	//std::cout << C0 << std::endl << C << std::endl;
 
 	cv::Mat points4D(1, oldFeaturesNorm.size(), CV_64FC4);
 	cv::triangulatePoints(C0, C, oldFeaturesNorm.getPoints(),
@@ -198,12 +246,12 @@ double Backend2D::estimateScale(Features3Dn& new3DPoints)
 {
 	vector<double> scaleVector;
 
+	unsigned int count = 0;
+
 	for (unsigned int i = 0; i < new3DPoints.size(); i++)
 	{
 		for (unsigned int j = i + 1; j < new3DPoints.size(); j++)
 		{
-			double den = cv::norm(new3DPoints[i] - new3DPoints[j]);
-
 			unsigned int id_i = new3DPoints.getId(i);
 			unsigned int id_j = new3DPoints.getId(j);
 
@@ -213,20 +261,31 @@ double Backend2D::estimateScale(Features3Dn& new3DPoints)
 				unsigned int index_j = old3DPoints.getIndex(id_j);
 
 				double num = cv::norm(old3DPoints[index_i] - old3DPoints[index_j]);
+				double den = cv::norm(new3DPoints[i] - new3DPoints[j]);
 
 				double localScale = num / den;
 
 				if (isfinite(localScale))
 					scaleVector.push_back(localScale);
+
+				count++;
 			}
 		}
 
 	}
 
+	std::cout << "Old points size: " << old3DPoints.size() << std::endl;
+	std::cout << "New points size: " << new3DPoints.size() << std::endl;
+
+	if(count == 0)
+	{
+		throw no_points_exception();
+	}
+
 	int N = scaleVector.size();
 
 	if (N == 0)
-		throw std::runtime_error("N == 0!!!!");
+		throw low_parallax_exception();
 
 	return estimateScaleMedian(scaleVector);
 }

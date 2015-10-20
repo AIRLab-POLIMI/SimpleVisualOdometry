@@ -101,6 +101,7 @@ public:
 
 	inline bool contains(unsigned int id)
 	{
+		assert(ids.size() == points.size() && points.size() == indexes.size());
 		return indexes.count(id) != 0;
 	}
 
