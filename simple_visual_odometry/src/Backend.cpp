@@ -44,7 +44,7 @@ Backend::Backend()
 	computed = false;
 }
 
-void Backend2D::computeTransformation(Features2D& features)
+void Backend2D::computeTransformation(Features2D& trackedFeatures, Features2D& features)
 {
 	if (oldFeatures.size() == 0)
 	{
@@ -55,12 +55,12 @@ void Backend2D::computeTransformation(Features2D& features)
 		Features2Dn featuresOldnorm;
 		Features2Dn featuresNewnorm;
 
-		double deltaMean = computeNormalizedFeatures(oldFeatures, features,
+		double deltaMean = computeNormalizedFeatures(oldFeatures, trackedFeatures,
 					featuresOldnorm, featuresNewnorm);
 
-		if (deltaMean > 1e-3)
+		if (deltaMean > 5.0)
 		{
-			vector<unsigned char> mask;
+			vector<unsigned char> mask(featuresOldnorm.size(), 1);
 			Mat C = recoverCameraFromEssential(featuresOldnorm, featuresNewnorm,
 						mask);
 
@@ -76,6 +76,8 @@ void Backend2D::computeTransformation(Features2D& features)
 					scale = estimateScale(triangulated);
 				}
 
+				std::cout << "scale=" << scale << std::endl;
+
 				t = Mat(scale * C.col(3));
 				R = C(Rect(0, 0, 3, 3));
 
@@ -86,7 +88,7 @@ void Backend2D::computeTransformation(Features2D& features)
 			}
 			catch(runtime_error& e)
 			{
-				std::cout << e.what() << std::endl;
+				//std::cout << e.what() << std::endl;
 			}
 		}
 
@@ -100,22 +102,28 @@ double Backend2D::computeNormalizedFeatures(Features2D& oldFeatures,
 {
 
 	double deltaMean = 0;
+	unsigned int N = 0;
 
 	for (unsigned int i = 0; i < newFeatures.size(); i++)
 	{
 		unsigned int id = newFeatures.getId(i);
-		unsigned int index = oldFeatures.getIndex(id);
 
-		Vec2d oldPoint = computeNormalizedPoint(oldFeatures[index]);
-		Vec2d newPoint = computeNormalizedPoint(newFeatures[i]);
+		if(oldFeatures.contains(id))
+		{
+			unsigned int index = oldFeatures.getIndex(id);
 
-		oldFeaturesNorm.addPoint(oldPoint, id);
-		newFeaturesNorm.addPoint(newPoint, id);
+			Vec2d oldPoint = computeNormalizedPoint(oldFeatures[index]);
+			Vec2d newPoint = computeNormalizedPoint(newFeatures[i]);
 
-		deltaMean += cv::norm(oldPoint - newPoint);
+			oldFeaturesNorm.addPoint(oldPoint, id);
+			newFeaturesNorm.addPoint(newPoint, id);
+
+			deltaMean += cv::norm(oldFeatures[index] - newFeatures[i]);
+			N++;
+		}
 	}
 
-	deltaMean /= newFeatures.size();
+	deltaMean /= N;
 	return deltaMean;
 }
 
@@ -142,21 +150,18 @@ Mat Backend2D::recoverCameraFromEssential(Features2Dn& oldFeaturesNorm,
 	vector<Vec2d> points2 = newFeaturesNorm.getPoints();
 
 	//std::cout << "mask = " << mask << std::endl;
-	Mat output;
-	Mat E = findFundamentalMat(points1, points2, CV_FM_RANSAC, 3.0, 0.99, output);
-	//std::cout << output.t() << std::endl;
+	Mat E = findFundamentalMat(points1, points2, CV_FM_RANSAC, 3.0, 0.99, mask);
 
-	output.copyTo(mask);
 	//std::cout << "mask = " << mask << std::endl;
 	//std::cout << "E = " << E << std::endl;
 
 	Mat R_e;
 	Mat t_e;
 
-	recoverPose(E, points1, points2, R_e, t_e, output);
+	recoverPose(E, points1, points2, R_e, t_e, mask);
 
 	Mat C;
-	hconcat(R, t, C);
+	hconcat(R_e, t_e, C);
 
 	return C;
 
@@ -202,15 +207,18 @@ double Backend2D::estimateScale(Features3Dn& new3DPoints)
 			unsigned int id_i = new3DPoints.getId(i);
 			unsigned int id_j = new3DPoints.getId(j);
 
-			unsigned int index_i = old3DPoints.getIndex(id_i);
-			unsigned int index_j = old3DPoints.getIndex(id_j);
+			if(old3DPoints.contains(id_i) && old3DPoints.contains(id_j))
+			{
+				unsigned int index_i = old3DPoints.getIndex(id_i);
+				unsigned int index_j = old3DPoints.getIndex(id_j);
 
-			double num = cv::norm(old3DPoints[index_i] - old3DPoints[index_j]);
+				double num = cv::norm(old3DPoints[index_i] - old3DPoints[index_j]);
 
-			double localScale = num / den;
+				double localScale = num / den;
 
-			if (isfinite(localScale))
-				scaleVector.push_back(localScale);
+				if (isfinite(localScale))
+					scaleVector.push_back(localScale);
+			}
 		}
 
 	}

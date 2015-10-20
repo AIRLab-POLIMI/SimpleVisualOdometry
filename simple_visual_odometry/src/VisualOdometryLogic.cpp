@@ -44,7 +44,7 @@ VisualOdometryLogic::VisualOdometryLogic(string imageTopic, ros::NodeHandle& n) 
 	tf::Matrix3x3 Rn;
 	Rn.setIdentity();
 
-	T = tf::Transform(Rn, tn);
+	T = config.T_W_CAMERA;
 
 
 	//debug window
@@ -113,14 +113,14 @@ void VisualOdometryLogic::publishFeatures(const string& frame_id, ros::Time stam
 
 }
 
-void VisualOdometryLogic::trackPose(const sensor_msgs::CameraInfoConstPtr& info_msg, Features2D& features)
+void VisualOdometryLogic::trackPose(const sensor_msgs::CameraInfoConstPtr& info_msg, Features2D& trackedFeatures)
 {
 	image_geometry::PinholeCameraModel cameraModel;
 	cameraModel.fromCameraInfo(info_msg);
 
 	//Compute Camera translation
 	backend->setK(cameraModel.fullIntrinsicMatrix());
-	backend->computeTransformation(features);
+	backend->computeTransformation(trackedFeatures, frontend.getCurrentFeatures());
 
 
 	if(backend->transformationComputed())
@@ -137,15 +137,15 @@ void VisualOdometryLogic::trackPose(const sensor_msgs::CameraInfoConstPtr& info_
 
 		tf::Transform T_new(R_tf, t_tf);
 
-		std::cout << t << std::endl;
-		std::cout << R << std::endl;
+		//std::cout << t << std::endl;
+		//std::cout << R << std::endl;
 
 		T = T*T_new;
 
-
-		//Send Transform
-		tfBroadcaster.sendTransform(tf::StampedTransform(T, ros::Time::now(), "map", info_msg->header.frame_id));
 	}
+
+	//Send Transform
+    tfBroadcaster.sendTransform(tf::StampedTransform(T, ros::Time::now(), "world", info_msg->header.frame_id));
 
 
 }
