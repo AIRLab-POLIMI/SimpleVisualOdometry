@@ -14,7 +14,9 @@ catkin_package()
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
-include_directories(include ${catkin_INCLUDE_DIRS})
+include_directories(include five-point-nister ${catkin_INCLUDE_DIRS})
+
+add_subdirectory(five-point-nister)
 
 #build the tracking node
 file(GLOB_RECURSE VO_SOURCE 
@@ -25,7 +27,7 @@ add_executable(${PROJECT_NAME} ${VO_SOURCE})
                     
                                  
 #link libriaries
-target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} five-point-nister ${catkin_LIBRARIES})
                        
 #add dependencies to generated messages
 add_dependencies(${PROJECT_NAME} ${catkin_EXPORTED_TARGETS})
