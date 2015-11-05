@@ -27,12 +27,14 @@
 #include "five-point.hpp"
 #include "Features.h"
 
+#include "FeaturesPublisher.h"
+
 class Backend
 {
 public:
 	Backend();
 
-	virtual void computeTransformation(Features2D& features) = 0;
+	virtual void computeTransformation(Features2D& trackedFeatures, Features2D& features) = 0;
 
 	inline bool transformationComputed()
 	{
@@ -73,7 +75,7 @@ protected:
 class Backend2D: public Backend
 {
 public:
-	void computeTransformation(Features2D& features) override;
+	void computeTransformation(Features2D& trackedFeatures, Features2D& features) override;
 
 private:
 	double computeNormalizedFeatures(Features2D& oldFeatures,
@@ -96,6 +98,8 @@ private:
 private:
 	Features2D oldFeatures;
 	Features3Dn old3DPoints;
+
+	FeaturesPublisher publisher;
 
 };
 

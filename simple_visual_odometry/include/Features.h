@@ -39,8 +39,6 @@ public:
 			std::vector<Type> newPoints,
 			std::vector<unsigned char> status)
 	{
-		ids.resize(newPoints.size());
-
 		unsigned int j = 0;
 		for(unsigned int i = 0; i < oldFeatures.size(); i++)
 		{
@@ -53,6 +51,7 @@ public:
 				j++;
 			}
 		}
+
 	}
 
 	void addPoint(const Type& point, unsigned int id)
@@ -90,12 +89,20 @@ public:
 
 	inline unsigned int getIndex(unsigned int id)
 	{
+		if(indexes.count(id) == 0)
+			throw std::runtime_error("no index");
 		return indexes[id];
 	}
 
 	inline size_t size()
 	{
 		return points.size();
+	}
+
+	inline bool contains(unsigned int id)
+	{
+		assert(ids.size() == points.size() && points.size() == indexes.size());
+		return indexes.count(id) != 0;
 	}
 
 private:
