@@ -19,8 +19,8 @@ include_directories(include five-point-nister ${catkin_INCLUDE_DIRS})
 add_subdirectory(five-point-nister)
 
 #build the tracking node
-file(GLOB_RECURSE VO_SOURCE 
-                  src/*.cpp) 
+file(GLOB VO_SOURCE 
+          src/*.cpp) 
 
 add_executable(${PROJECT_NAME} ${VO_SOURCE})
                             
