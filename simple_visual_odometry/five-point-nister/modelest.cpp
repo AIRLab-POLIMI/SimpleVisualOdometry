@@ -162,6 +162,7 @@ bool CvModelEstimator2::runRANSAC( const CvMat* m1, const CvMat* m2, CvMat* mode
         {
             CvMat model_i;
             cvGetRows( models, &model_i, i*modelSize.height, (i+1)*modelSize.height );
+            std::cout << "model " << i << std::endl << cv::Mat(&model_i) << std::endl;
             goodCount = findInliers( m1, m2, &model_i, err, tmask, reprojThreshold );
 
             if( goodCount > MAX(maxGoodCount, modelPoints-1) )

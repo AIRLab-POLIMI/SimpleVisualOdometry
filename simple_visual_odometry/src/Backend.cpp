@@ -66,6 +66,8 @@ double countInliers(const std::vector<unsigned char>& v)
 Backend::Backend()
 {
 	computed = false;
+	lamdaMax = 0;
+	lamdaMin = 0;
 }
 
 void Backend2D::computeTransformation(Features2D& trackedFeatures, Features2D& features)
@@ -85,7 +87,9 @@ void Backend2D::computeTransformation(Features2D& trackedFeatures, Features2D& f
 		double deltaMean = computeNormalizedFeatures(oldFeatures, trackedFeatures,
 					featuresOldnorm, featuresNewnorm);
 
-		if (deltaMean > 5.0)
+
+
+		if (deltaMean > 1.0/lamdaMin)
 		{
 			vector<unsigned char> mask;
 			Mat C = recoverCameraFromEssential(featuresOldnorm, featuresNewnorm,
@@ -193,7 +197,7 @@ Mat Backend2D::recoverCameraFromEssential(Features2Dn& oldFeaturesNorm,
 	std::cout << "points1 " << points1.size() << std::endl;
 	std::cout << "points2 " << points2.size() << std::endl;
 	//std::cout << "mask = " << mask << std::endl;
-	Mat E = findFundamentalMat(points1, points2, FM_RANSAC, 1.0, 0.9, mask);
+	Mat E = findFundamentalMat(points1, points2, FM_RANSAC, 1.0/lamdaMax, 0.9, mask);
 	std::cout << "inliers " << countInliers(mask) << "%" << std::endl;
 	std::cout << "mask = " << mask << std::endl;
 	//std::cout << "E = " << E << std::endl;

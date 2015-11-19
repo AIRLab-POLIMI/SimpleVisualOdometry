@@ -23,11 +23,14 @@ file(GLOB VO_SOURCE
           src/*.cpp) 
 
 add_executable(${PROJECT_NAME} ${VO_SOURCE})
+
+add_executable(five_points_test test/test.cpp)
                             
                     
                                  
 #link libriaries
 target_link_libraries(${PROJECT_NAME} five-point-nister ${catkin_LIBRARIES})
+target_link_libraries(five_points_test five-point-nister ${catkin_LIBRARIES})
                        
 #add dependencies to generated messages
 add_dependencies(${PROJECT_NAME} ${catkin_EXPORTED_TARGETS})

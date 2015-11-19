@@ -56,6 +56,13 @@ public:
 	inline void setK(const cv::Matx33d& K)
 	{
 		Kinv = K.inv();
+		cv::Mat s;
+		cv::SVD::compute(Kinv, s);
+		double tmpMax, tmpMin;
+		cv::minMaxLoc(s,&tmpMin,&tmpMax);
+
+		lamdaMax = std::sqrt(tmpMax);
+		lamdaMin = std::sqrt(tmpMin);
 	}
 
 	virtual ~Backend()
@@ -69,6 +76,8 @@ protected:
 	cv::Matx33d R;
 
 	cv::Matx33d Kinv;
+	double lamdaMax;
+	double lamdaMin;
 
 };
 
