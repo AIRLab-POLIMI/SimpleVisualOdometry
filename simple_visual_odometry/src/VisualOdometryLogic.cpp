@@ -45,7 +45,7 @@ VisualOdometryLogic::VisualOdometryLogic(string imageTopic, ros::NodeHandle& n) 
 	Rn.setIdentity();
 
 	T = config.T_W_CAMERA;
-
+	Tgt = config.T_W_CAMERA;
 
 	//debug window
 	src_window = "Extracted Features";
@@ -56,7 +56,8 @@ VisualOdometryLogic::VisualOdometryLogic(string imageTopic, ros::NodeHandle& n) 
 
 }
 
-void VisualOdometryLogic::handleImage(const sensor_msgs::ImageConstPtr& msg, const sensor_msgs::CameraInfoConstPtr& info_msg)
+void VisualOdometryLogic::handleImage(const sensor_msgs::ImageConstPtr& msg,
+			const sensor_msgs::CameraInfoConstPtr& info_msg)
 {
 	cv_bridge::CvImagePtr cv_ptr, cv_ptr_color;
 
@@ -101,19 +102,21 @@ void VisualOdometryLogic::display(cv_bridge::CvImagePtr cv_ptr)
 	//Print debug image
 	Mat coloredImage;
 	coloredImage = cv_ptr->image;
-	drawFeatures(coloredImage, frontend.getCurrentFeatures(),
-				Scalar(255, 0, 0), Scalar(0, 255, 0));
+	drawFeatures(coloredImage, frontend.getCurrentFeatures(), Scalar(255, 0, 0),
+				Scalar(0, 255, 0));
 	imshow(src_window, coloredImage);
 	waitKey(1);
 }
 
-void VisualOdometryLogic::publishFeatures(const string& frame_id, ros::Time stamp)
+void VisualOdometryLogic::publishFeatures(const string& frame_id,
+			ros::Time stamp)
 {
-
 
 }
 
-void VisualOdometryLogic::trackPose(const sensor_msgs::CameraInfoConstPtr& info_msg, Features2D& trackedFeatures)
+void VisualOdometryLogic::trackPose(
+			const sensor_msgs::CameraInfoConstPtr& info_msg,
+			Features2D& trackedFeatures)
 {
 	image_geometry::PinholeCameraModel cameraModel;
 	cameraModel.fromCameraInfo(info_msg);
@@ -122,34 +125,35 @@ void VisualOdometryLogic::trackPose(const sensor_msgs::CameraInfoConstPtr& info_
 	Matx34d P = cameraModel.fullProjectionMatrix();
 	Matx33d K = P.get_minor<3, 3>(0, 0);
 	backend->setK(K);
-	backend->computeTransformation(trackedFeatures, frontend.getCurrentFeatures());
+	backend->computeTransformation(trackedFeatures,
+				frontend.getCurrentFeatures());
 
-
-	if(backend->transformationComputed())
+	if (backend->transformationComputed())
 	{
 		Matx33d R = backend->getRotation();
 		Vec3d t = backend->getTranslation();
 
-
 		//Compute new camera pose
 		tf::Vector3 t_tf(t[0], t[1], t[2]);
 
-		tf::Matrix3x3 R_tf(R(0, 0), R(0, 1), R(0, 2),
-						   R(1, 0), R(1, 1), R(1, 2),
-						   R(2, 0), R(2, 1), R(2, 2));
+		tf::Matrix3x3 R_tf(R(0, 0), R(0, 1), R(0, 2), R(1, 0), R(1, 1), R(1, 2),
+					R(2, 0), R(2, 1), R(2, 2));
 
 		tf::Transform T_new(R_tf, t_tf);
 
 		//std::cout << t << std::endl;
 		//std::cout << R << std::endl;
 
-		T = T*T_new;
+		T = T * T_new;
+
+		computeError(T_new.inverse(), info_msg->header.stamp);
 
 	}
 
 	//Send Transform
-    tfBroadcaster.sendTransform(tf::StampedTransform(T, ros::Time::now(), "world", info_msg->header.frame_id));
-
+	tfBroadcaster.sendTransform(
+				tf::StampedTransform(T, info_msg->header.stamp, "world",
+							info_msg->header.frame_id));
 
 }
 
@@ -162,8 +166,8 @@ void VisualOdometryLogic::drawFeatures(Mat& frame, Features2D& features,
 
 	for (int j = 0; j < features.size(); j++)
 	{
-		cv::Scalar drawColor = (features.getId(j) > max_id) ?
-								colorNew : colorMatched;
+		cv::Scalar drawColor =
+					(features.getId(j) > max_id) ? colorNew : colorMatched;
 		circle(frame, features[j], 3, drawColor);
 
 		new_max_id = std::max(new_max_id, features.getId(j));
@@ -177,6 +181,53 @@ VisualOdometryLogic::~VisualOdometryLogic()
 
 }
 
+void VisualOdometryLogic::computeError(const tf::Transform& Tnew, const ros::Time& stamp)
+{
+	try
+	{
+		tf::StampedTransform transform;
+		tfListener.lookupTransform("world", "prosilica/camera_link_gt",
+					stamp, transform);
+
+		tf::Vector3 t_gt = transform.getOrigin() - Tgt.getOrigin();
+		tf::Quaternion R_gt = transform.getRotation()*Tgt.getRotation().inverse();
+		tf::Matrix3x3 Rmat_gt(R_gt);
+
+		tf::Vector3 t =  Tnew.getOrigin();
+		tf::Quaternion R = Tnew.getRotation();
+		tf::Matrix3x3 Rmat(R);
+
+		t.normalize();
+		t_gt.normalize();
+
+		tf::Vector3 t_error = t - t_gt;
+
+		tf::Quaternion R_error = T.getRotation()*R_gt.inverse();
+
+		std::cout << "t_gt    = " << t_gt[0] << ", " << t_gt[1] << ", " << t_gt[2]  << std::endl;
+		std::cout << "t       = " << t[0] << ", " << t[1] << ", " << t[2]  << std::endl;
+		std::cout << "t_error = " << t_error[0] << ", " << t_error[1] << ", " << t_error[2]  << std::endl;
+
+		tf::Matrix3x3 R_errorMat(R_error);
+
+		double rollError, pitchError, yawError;
+
+		Rmat_gt.getRPY(rollError, pitchError, yawError);
+		std::cout << "Rgt     = " << rollError << "," << pitchError << "," << yawError << std::endl;
+		Rmat.getRPY(rollError, pitchError, yawError);
+		std::cout << "R       = " << rollError << "," << pitchError << "," << yawError << std::endl;
+		R_errorMat.getRPY(rollError, pitchError, yawError);
+		std::cout << "R_error = " << rollError << "," << pitchError << "," << yawError << std::endl;
+
+		//save gt transform
+		Tgt = transform;
+
+	}
+	catch (tf::TransformException &ex)
+	{
+
+	}
+}
 
 int main(int argc, char *argv[])
 {

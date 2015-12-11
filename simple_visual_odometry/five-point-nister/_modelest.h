@@ -65,7 +65,7 @@ protected:
                                      const CvMat* model, CvMat* error ) = 0;
     virtual int findInliers( const CvMat* m1, const CvMat* m2,
                              const CvMat* model, CvMat* error,
-                             CvMat* mask, double threshold );
+                             CvMat* mask, double threshold, double& inlierError);
     virtual bool getSubset( const CvMat* m1, const CvMat* m2,
                             CvMat* ms1, CvMat* ms2, int maxAttempts=1000 );
     virtual bool checkSubset( const CvMat* ms1, int count );

@@ -30,6 +30,7 @@
 #include <sensor_msgs/image_encodings.h>
 
 #include <tf/transform_broadcaster.h>
+#include <tf/transform_listener.h>
 
 #include <opencv2/opencv.hpp>
 
@@ -59,6 +60,9 @@ private:
 	void drawFeatures(cv::Mat& frame, Features2D& features,
 				cv::Scalar colorMatched, cv::Scalar colorNew);
 
+
+	void computeError(const tf::Transform& Tnew, const ros::Time& stamp);
+
 private:
 	//Ros management
 	image_transport::ImageTransport it;
@@ -68,7 +72,9 @@ private:
 
 	//Pose Tracking
 	tf::Transform T;
+	tf::Transform Tgt;
 	tf::TransformBroadcaster tfBroadcaster;
+	tf::TransformListener tfListener;
 
 	//Visual Frontend
 	VisualFrontend frontend;

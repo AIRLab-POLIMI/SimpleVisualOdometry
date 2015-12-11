@@ -65,6 +65,19 @@ public:
 		lamdaMin = std::sqrt(tmpMin);
 	}
 
+	inline bool sufficientDelta(double deltaFeatures)
+	{
+		if(started)
+		{
+			return deltaFeatures > 10.0;
+		}
+		else
+		{
+			started = true;
+			return deltaFeatures > 30.0;
+		}
+	}
+
 	virtual ~Backend()
 	{
 
@@ -78,6 +91,9 @@ protected:
 	cv::Matx33d Kinv;
 	double lamdaMax;
 	double lamdaMin;
+
+
+	bool started;
 
 };
 

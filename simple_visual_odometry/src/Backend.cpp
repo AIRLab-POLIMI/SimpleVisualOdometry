@@ -68,6 +68,8 @@ Backend::Backend()
 	computed = false;
 	lamdaMax = 0;
 	lamdaMin = 0;
+
+	started = false;
 }
 
 void Backend2D::computeTransformation(Features2D& trackedFeatures, Features2D& features)
@@ -89,20 +91,18 @@ void Backend2D::computeTransformation(Features2D& trackedFeatures, Features2D& f
 
 
 
-		if (deltaMean > 1.0/lamdaMin)
+		if (sufficientDelta(deltaMean))
 		{
 			vector<unsigned char> mask;
 			Mat C = recoverCameraFromEssential(featuresOldnorm, featuresNewnorm,
 						mask);
 
-			std::cout << "featuresOldnorm " << featuresOldnorm.size() << std::endl;
-			std::cout << "featuresNewnorm " << featuresNewnorm.size() << std::endl;
-			std::cout << "inliers " << countInliers(mask) << "%" << std::endl;
+			//std::cout << "featuresOldnorm " << featuresOldnorm.size() << std::endl;
+			//std::cout << "featuresNewnorm " << featuresNewnorm.size() << std::endl;
+			//std::cout << "inliers " << countInliers(mask) << "%" << std::endl;
 
 			Features3Dn&& triangulated = triangulatePoints(featuresOldnorm,
 						featuresNewnorm, C, mask);
-
-			debug1++; //TODO levami
 
 			try
 			{
@@ -113,7 +113,6 @@ void Backend2D::computeTransformation(Features2D& trackedFeatures, Features2D& f
 					scale = estimateScale(triangulated);
 				}
 
-				//std::cout << "scale=" << scale << std::endl;
 
 				t = Mat(scale * C.col(3));
 				R = C(Rect(0, 0, 3, 3));
@@ -121,6 +120,7 @@ void Backend2D::computeTransformation(Features2D& trackedFeatures, Features2D& f
 				computed = true;
 
 				old3DPoints = triangulated;
+				old3DPoints.scalePoints(scale);
 
 				publisher.publishFeatureMarkers(old3DPoints);
 				oldFeatures = features;
@@ -131,9 +131,7 @@ void Backend2D::computeTransformation(Features2D& trackedFeatures, Features2D& f
 			}
 			catch(no_points_exception& e)
 			{
-				debug2++;
 				old3DPoints = Features3Dn();
-				std::cout << "no points " << debug2 << "/" << debug1 << std::endl;
 			}
 		}
 
@@ -197,7 +195,8 @@ Mat Backend2D::recoverCameraFromEssential(Features2Dn& oldFeaturesNorm,
 	std::cout << "points1 " << points1.size() << std::endl;
 	std::cout << "points2 " << points2.size() << std::endl;
 	//std::cout << "mask = " << mask << std::endl;
-	Mat E = findFundamentalMat(points1, points2, FM_RANSAC, 1.0/lamdaMax, 0.9, mask);
+	//Mat E = findFundamentalMat(points1, points2, FM_RANSAC, 1.0/lamdaMax, 0.9, mask);
+	Mat E = findEssentialMat(points1, points2, 1.0, cv::Point2d(0,0),FM_RANSAC, 0.99, 1.0/lamdaMax, mask);
 	std::cout << "inliers " << countInliers(mask) << "%" << std::endl;
 	std::cout << "mask = " << mask << std::endl;
 	//std::cout << "E = " << E << std::endl;

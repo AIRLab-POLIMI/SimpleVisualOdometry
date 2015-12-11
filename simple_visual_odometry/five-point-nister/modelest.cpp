@@ -70,7 +70,7 @@ void CvModelEstimator2::setSeed( int64 seed )
 
 int CvModelEstimator2::findInliers( const CvMat* m1, const CvMat* m2,
                                     const CvMat* model, CvMat* _err,
-                                    CvMat* _mask, double threshold )
+                                    CvMat* _mask, double threshold, double& inlierError)
 {
     int i, count = _err->rows*_err->cols, goodCount = 0;
     const float* err = _err->data.fl;
@@ -78,8 +78,15 @@ int CvModelEstimator2::findInliers( const CvMat* m1, const CvMat* m2,
 
     computeReprojError( m1, m2, model, _err );
     threshold *= threshold;
+    inlierError = 0;
     for( i = 0; i < count; i++ )
+    {
         goodCount += mask[i] = err[i] <= threshold;
+        inlierError += mask[i] ? err[i] : 0;
+    }
+
+    inlierError /= goodCount;
+
     return goodCount;
 }
 
@@ -120,6 +127,7 @@ bool CvModelEstimator2::runRANSAC( const CvMat* m1, const CvMat* m2, CvMat* mode
 
     int iter, niters = maxIters;
     int count = m1->rows*m1->cols, maxGoodCount = 0;
+    double currentError = std::numeric_limits<double>::infinity();
     CV_Assert( CV_ARE_SIZES_EQ(m1, m2) && CV_ARE_SIZES_EQ(m1, mask) );
 
     if( count < modelPoints )
@@ -162,14 +170,15 @@ bool CvModelEstimator2::runRANSAC( const CvMat* m1, const CvMat* m2, CvMat* mode
         {
             CvMat model_i;
             cvGetRows( models, &model_i, i*modelSize.height, (i+1)*modelSize.height );
-            std::cout << "model " << i << std::endl << cv::Mat(&model_i) << std::endl;
-            goodCount = findInliers( m1, m2, &model_i, err, tmask, reprojThreshold );
+            double error;
+            goodCount = findInliers( m1, m2, &model_i, err, tmask, reprojThreshold, error);
 
-            if( goodCount > MAX(maxGoodCount, modelPoints-1) )
+            if( goodCount > MAX(maxGoodCount, modelPoints-1) || (goodCount == MAX(maxGoodCount, modelPoints-1) && error < currentError))
             {
                 std::swap(tmask, mask);
                 cvCopy( &model_i, model );
                 maxGoodCount = goodCount;
+                currentError = error;
                 niters = cvRANSACUpdateNumIters( confidence,
                     (double)(count - goodCount)/count, modelPoints, niters );
             }
@@ -265,7 +274,8 @@ bool CvModelEstimator2::runLMeDS( const CvMat* m1, const CvMat* m2, CvMat* model
         sigma = 2.5*1.4826*(1 + 5./(count - modelPoints))*sqrt(minMedian);
         sigma = MAX( sigma, 0.001 );
 
-        count = findInliers( m1, m2, model, err, mask, sigma );
+        double error;
+        count = findInliers( m1, m2, model, err, mask, sigma, error);
         result = count >= modelPoints;
     }
 

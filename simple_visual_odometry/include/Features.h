@@ -105,6 +105,12 @@ public:
 		return indexes.count(id) != 0;
 	}
 
+	void scalePoints(double scale)
+	{
+		for(auto& p : points)
+			p *= scale;
+	}
+
 private:
 	std::vector<Type> points;
 	std::vector<unsigned int> ids;

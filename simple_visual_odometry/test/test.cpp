@@ -48,9 +48,9 @@ int main(int argc, char *argv[])
 	std::cout << points3D << std::endl;
 
 	//Recover essential
-	cv::Mat tmp = findEssentialMat(points1, points2, 1, cv::Point(0, 0), 8, 0.90, 0.001);
+	cv::Mat tmp = findEssentialMat(points1, points2, 1, cv::Point(0, 0), FM_RANSAC, 0.90, 1);
 	cv::Matx33d E = tmp;
-	cv::Matx33d F = cv::findFundamentalMat(points1, points2, FM_RANSAC, 0.001, 0.9);
+	cv::Matx33d F = cv::findFundamentalMat(points1, points2, FM_RANSAC, 1, 0.9);
 
 	std::cout << "E: " << E << std::endl;
 	std::cout << "F: " << F << std::endl;
