@@ -31,7 +31,7 @@ struct ConfigManager
 {
 	ConfigManager();
 
-	tf::Transform T_W_CAMERA;
+	tf::Transform T_WR;
 
 
 };

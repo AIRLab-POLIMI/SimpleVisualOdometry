@@ -39,8 +39,25 @@ VisualOdometryLogic::VisualOdometryLogic(string imageTopic, ros::NodeHandle& n) 
 	imageSubscriber = it.subscribeCamera(imageTopic + "image_rect_color", 1,
 				&VisualOdometryLogic::handleImage, this);
 
-	T = config.T_W_CAMERA;
-	Tgt = config.T_W_CAMERA;
+	//Init rotation camera/robot
+	tf::Matrix3x3 R_CR(0,    -1,     0, //
+				       0,     0,    -1, //
+				       1,     0,     0);
+
+	tf::Matrix3x3 R_RC(0,     0,     1, //
+					  -1,     0,     0, //
+					   0,    -1,     0);
+	tf::Vector3 t0(0, 0, 0);
+
+	T_CR.setBasis(R_CR);
+	T_CR.setOrigin(t0);
+
+	T_RC.setBasis(R_RC);
+	T_RC.setOrigin(t0);
+
+	//Init pose
+	T_WC = config.T_WR*T_RC;
+	Tgt = config.T_WR;
 
 	//debug window
 	src_window = "Extracted Features";
@@ -139,20 +156,16 @@ void VisualOdometryLogic::trackPose(
 		//std::cout << t << std::endl;
 		//std::cout << R << std::endl;
 
-		T = T * T_new;
+		T_WC = T_WC * T_new;
 
 		computeError(T_new, info_msg->header.stamp);
 
 	}
 
-	// default coordinate change
-	tf::Quaternion q_CR(0.5, 0.5, -0.5, 0.5);
-	tf::Vector3 t0(0, 0, 0);
-	tf::Transform T_CR(q_CR, t0);
 
 	//Send Transform
 	tfBroadcaster.sendTransform(
-				tf::StampedTransform(T, info_msg->header.stamp, "world",
+				tf::StampedTransform(T_WC*T_CR, info_msg->header.stamp, "world",
 							info_msg->header.frame_id));
 
 }
@@ -202,7 +215,7 @@ void VisualOdometryLogic::computeError(const tf::Transform& Tnew, const ros::Tim
 
 		tf::Vector3 t_error = t - t_gt;
 
-		tf::Quaternion R_error = T.getRotation()*R_gt.inverse();
+		tf::Quaternion R_error = T_WC.getRotation()*R_gt.inverse();
 
 		std::cout << "t_gt    = " << t_gt[0] << ", " << t_gt[1] << ", " << t_gt[2]  << std::endl;
 		std::cout << "t       = " << t[0] << ", " << t[1] << ", " << t[2]  << std::endl;
@@ -231,7 +244,7 @@ void VisualOdometryLogic::computeError(const tf::Transform& Tnew, const ros::Tim
 
 int main(int argc, char *argv[])
 {
-	ros::init(argc, argv, "roamros_extractor");
+	ros::init(argc, argv, "simple_visual_odometry");
 
 	if (argc < 2)
 	{

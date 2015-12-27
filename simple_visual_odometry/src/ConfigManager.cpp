@@ -30,13 +30,13 @@ ConfigManager::ConfigManager()
 	ros::NodeHandle n("~");
 
 	 //Init camera pose wrt odometric center
-	  vector<double> T_W_CAMERA_std(7);
-	  if (!n.getParam("T_O_CAMERA", T_W_CAMERA_std) || T_W_CAMERA_std.size() != 7) {
-	    throw runtime_error("Incorrect camera pose or no camera pose specified");
+	  vector<double> T_WR_std(7);
+	  if (!n.getParam("T_WR", T_WR_std)) {
+	    throw runtime_error("No camera pose specified");
 	  }
 
-	  tf::Vector3 t(T_W_CAMERA_std[0], T_W_CAMERA_std[1], T_W_CAMERA_std[2]);
-	  tf::Quaternion q(T_W_CAMERA_std[3], T_W_CAMERA_std[4], T_W_CAMERA_std[5], T_W_CAMERA_std[6]);
+	  tf::Vector3 t(T_WR_std[0], T_WR_std[1], T_WR_std[2]);
+	  tf::Quaternion q(T_WR_std[4], T_WR_std[5], T_WR_std[6], T_WR_std[3]);
 
-	  T_W_CAMERA = tf::Transform(q, t);
+	  T_WR = tf::Transform(q, t);
 }

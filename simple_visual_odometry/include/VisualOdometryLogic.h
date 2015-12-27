@@ -71,10 +71,13 @@ private:
 	ConfigManager config;
 
 	//Pose Tracking
-	tf::Transform T;
+	tf::Transform T_WC;
 	tf::Transform Tgt;
 	tf::TransformBroadcaster tfBroadcaster;
 	tf::TransformListener tfListener;
+
+	tf::Transform T_CR;
+	tf::Transform T_RC;
 
 	//Visual Frontend
 	VisualFrontend frontend;
