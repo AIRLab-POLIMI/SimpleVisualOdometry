@@ -40,7 +40,7 @@ void FeaturesPublisher::publishFeatureMarkers(Features3Dn& features)
 
   msg.header.stamp = ros::Time::now();
   //msg.header.frame_id = "/world";
-  msg.header.frame_id = "/prosilica/camera_link_gt";
+  msg.header.frame_id = "/prosilica_camera";
   msg.type = visualization_msgs::Marker::CUBE_LIST;
   msg.frame_locked = false;
   msg.ns = "vo";
@@ -60,10 +60,10 @@ void FeaturesPublisher::publishFeatureMarkers(Features3Dn& features)
   msg.pose.position.y = 0.0;
   msg.pose.position.z = 0.0;
 
-  msg.pose.orientation.x = -0.5;
-  msg.pose.orientation.y =  0.5;
-  msg.pose.orientation.z =  0.5;
   msg.pose.orientation.w = -0.5;
+  msg.pose.orientation.x =  0.5;
+  msg.pose.orientation.y = -0.5;
+  msg.pose.orientation.z =  0.5;
 
   msg.points.resize(features.size());
 
