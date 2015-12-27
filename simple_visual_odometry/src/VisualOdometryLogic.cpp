@@ -39,11 +39,6 @@ VisualOdometryLogic::VisualOdometryLogic(string imageTopic, ros::NodeHandle& n) 
 	imageSubscriber = it.subscribeCamera(imageTopic + "image_rect_color", 1,
 				&VisualOdometryLogic::handleImage, this);
 
-	//Init transform
-	tf::Vector3 tn(0, 0, 0);
-	tf::Matrix3x3 Rn;
-	Rn.setIdentity();
-
 	T = config.T_W_CAMERA;
 	Tgt = config.T_W_CAMERA;
 
@@ -146,9 +141,14 @@ void VisualOdometryLogic::trackPose(
 
 		T = T * T_new;
 
-		computeError(T_new.inverse(), info_msg->header.stamp);
+		computeError(T_new, info_msg->header.stamp);
 
 	}
+
+	// default coordinate change
+	tf::Quaternion q_CR(0.5, 0.5, -0.5, 0.5);
+	tf::Vector3 t0(0, 0, 0);
+	tf::Transform T_CR(q_CR, t0);
 
 	//Send Transform
 	tfBroadcaster.sendTransform(

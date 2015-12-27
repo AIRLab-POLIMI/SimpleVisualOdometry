@@ -66,9 +66,7 @@ double countInliers(const std::vector<unsigned char>& v)
 Backend::Backend()
 {
 	computed = false;
-	lamdaMax = 0;
-	lamdaMin = 0;
-
+	Kscale = 0;
 	started = false;
 }
 
@@ -96,10 +94,6 @@ void Backend2D::computeTransformation(Features2D& trackedFeatures, Features2D& f
 			vector<unsigned char> mask;
 			Mat C = recoverCameraFromEssential(featuresOldnorm, featuresNewnorm,
 						mask);
-
-			//std::cout << "featuresOldnorm " << featuresOldnorm.size() << std::endl;
-			//std::cout << "featuresNewnorm " << featuresNewnorm.size() << std::endl;
-			//std::cout << "inliers " << countInliers(mask) << "%" << std::endl;
 
 			Features3Dn&& triangulated = triangulatePoints(featuresOldnorm,
 						featuresNewnorm, C, mask);
@@ -192,22 +186,13 @@ Mat Backend2D::recoverCameraFromEssential(Features2Dn& oldFeaturesNorm,
 	vector<Vec2d> points1 = oldFeaturesNorm.getPoints();
 	vector<Vec2d> points2 = newFeaturesNorm.getPoints();
 
-	std::cout << "points1 " << points1.size() << std::endl;
-	std::cout << "points2 " << points2.size() << std::endl;
-	//std::cout << "mask = " << mask << std::endl;
 	//Mat E = findFundamentalMat(points1, points2, FM_RANSAC, 1.0/lamdaMax, 0.9, mask);
-	Mat E = findEssentialMat(points1, points2, 1.0, cv::Point2d(0,0),FM_RANSAC, 0.99, 1.0/lamdaMax, mask);
-	std::cout << "inliers " << countInliers(mask) << "%" << std::endl;
-	std::cout << "mask = " << mask << std::endl;
-	//std::cout << "E = " << E << std::endl;
+	Mat E = findEssentialMat(points1, points2, 1.0, cv::Point2d(0,0),FM_RANSAC, 0.99, 1.0/Kscale, mask);
 
 	Mat R_e;
 	Mat t_e;
 
 	recoverPose(E, points1, points2, R_e, t_e, mask);
-
-	//std::cout << t_e << std::endl;
-	//std::cout << R_e << std::endl;
 
 	Mat C;
 	hconcat(R_e, t_e, C);
@@ -223,8 +208,6 @@ Features3Dn Backend2D::triangulatePoints(Features2Dn& oldFeaturesNorm,
 	Features3Dn triangulated;
 
 	cv::Mat C0 = cv::Mat::eye(3, 4, CV_64FC1);
-
-	//std::cout << C0 << std::endl << C << std::endl;
 
 	cv::Mat points4D(1, oldFeaturesNorm.size(), CV_64FC4);
 	cv::triangulatePoints(C0, C, oldFeaturesNorm.getPoints(),
@@ -276,9 +259,6 @@ double Backend2D::estimateScale(Features3Dn& new3DPoints)
 		}
 
 	}
-
-	std::cout << "Old points size: " << old3DPoints.size() << std::endl;
-	std::cout << "New points size: " << new3DPoints.size() << std::endl;
 
 	if(count == 0)
 	{

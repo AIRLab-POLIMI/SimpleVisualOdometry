@@ -18,7 +18,8 @@
               type="simple_visual_odometry" 
               args="$(arg camera_source)" 
               output="screen">
-        <rosparam param="T_O_CAMERA">[-0.178, -0.066, 0.840, 0.008, 0.004, 0.713, 0.701]</rosparam>
+        <rosparam param="T_O_CAMERA">[0, 0, 0, -0.5, 0.5, -0.5, 0.5]</rosparam>
+        <!-- [-0.178, -0.066, 0.840, 0.008, 0.004, 0.713, 0.701] -->
         <!--[0.062, -0.199, -0.835, -0.008, -0.008, -0.714, 0.700] -->
     </node>
               
