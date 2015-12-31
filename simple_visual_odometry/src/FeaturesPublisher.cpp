@@ -60,10 +60,10 @@ void FeaturesPublisher::publishFeatureMarkers(Features3Dn& features)
   msg.pose.position.y = 0.0;
   msg.pose.position.z = 0.0;
 
-  msg.pose.orientation.w = -0.5;
   msg.pose.orientation.x =  0.5;
   msg.pose.orientation.y = -0.5;
   msg.pose.orientation.z =  0.5;
+  msg.pose.orientation.w = -0.5;
 
   msg.points.resize(features.size());
 
