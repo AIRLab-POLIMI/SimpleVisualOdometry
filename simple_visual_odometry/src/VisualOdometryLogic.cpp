@@ -167,7 +167,7 @@ void VisualOdometryLogic::trackPose(
 
 	//Send Transform
 	tfBroadcaster.sendTransform(
-				tf::StampedTransform(T_WR.inverse(), info_msg->header.stamp, "world",
+				tf::StampedTransform(T_WR, info_msg->header.stamp, "world",
 							info_msg->header.frame_id));
 
 	tfBroadcaster.sendTransform(
