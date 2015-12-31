@@ -199,14 +199,8 @@ Mat Backend2D::recoverCameraFromEssential(Features2Dn& oldFeaturesNorm,
 	std::cout << "ransac inliers: " << countNonZero(mask) << std::endl;
 	recoverPose(E, points1, points2, R_e, t_e, mask);
 
-
-	std::cout << "t: " << t_e.t() << std::endl;
-
-
 	Mat C;
 	hconcat(R_e, t_e, C);
-
-	std::cout << C << std::endl;
 
 	return C;
 
