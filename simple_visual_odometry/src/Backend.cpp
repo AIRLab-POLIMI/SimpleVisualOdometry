@@ -111,6 +111,9 @@ void Backend2D::computeTransformation(Features2D& trackedFeatures, Features2D& f
 				t = Mat(scale * C.col(3));
 				R = C(Rect(0, 0, 3, 3));
 
+
+				std::cout << "t scaled: " << t.t() << std::endl;
+
 				computed = true;
 
 				old3DPoints = triangulated;
@@ -187,15 +190,23 @@ Mat Backend2D::recoverCameraFromEssential(Features2Dn& oldFeaturesNorm,
 	vector<Vec2d> points2 = newFeaturesNorm.getPoints();
 
 	//Mat E = findFundamentalMat(points1, points2, FM_RANSAC, 1.0/lamdaMax, 0.9, mask);
-	Mat E = findEssentialMat(points1, points2, 1.0, cv::Point2d(0,0),FM_RANSAC, 0.99, 1.0/Kscale, mask);
+	Mat E = findEssentialMat(points1, points2, 1.0, cv::Point2d(0,0),FM_RANSAC, 0.99, 0.5/Kscale, mask);
 
 	Mat R_e;
 	Mat t_e;
 
+
+	std::cout << "ransac inliers: " << countNonZero(mask) << std::endl;
 	recoverPose(E, points1, points2, R_e, t_e, mask);
+
+
+	std::cout << "t: " << t_e.t() << std::endl;
+
 
 	Mat C;
 	hconcat(R_e, t_e, C);
+
+	std::cout << C << std::endl;
 
 	return C;
 
@@ -218,11 +229,13 @@ Features3Dn Backend2D::triangulatePoints(Features2Dn& oldFeaturesNorm,
 		if (mask[i])
 		{
 			Vec4d point4d = points4D.col(i);
-			point4d/point4d[3];
+			point4d = point4d/point4d[3];
 			Vec3d point(point4d[0], point4d[1], point4d[2]);
 			triangulated.addPoint(point, oldFeaturesNorm.getId(i));
 		}
 	}
+
+	std::cout << "old: " << oldFeaturesNorm.size() << " new: " << newFeaturesNorm.size() << " inliers: " << triangulated.size() << std::endl;
 
 	return triangulated;
 

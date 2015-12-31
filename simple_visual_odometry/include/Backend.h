@@ -65,12 +65,12 @@ public:
 	{
 		if(started)
 		{
-			return deltaFeatures > 10.0;
+			return deltaFeatures > 20.0;
 		}
 		else
 		{
 			started = true;
-			return deltaFeatures > 30.0;
+			return deltaFeatures > 50.0;
 		}
 	}
 

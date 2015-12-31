@@ -104,6 +104,11 @@ bool VisualOdometryLogic::getImage(const sensor_msgs::ImageConstPtr& msg,
 	}
 }
 
+VisualOdometryLogic::~VisualOdometryLogic()
+{
+
+}
+
 void VisualOdometryLogic::display(cv_bridge::CvImagePtr cv_ptr)
 {
 	//Print debug image
@@ -158,10 +163,16 @@ void VisualOdometryLogic::trackPose(
 	}
 
 
+	tf::Transform T_WR = T_WC*T_CR;
+
 	//Send Transform
 	tfBroadcaster.sendTransform(
-				tf::StampedTransform(T_WC*T_CR, info_msg->header.stamp, "world",
+				tf::StampedTransform(T_WR.inverse(), info_msg->header.stamp, "world",
 							info_msg->header.frame_id));
+
+	tfBroadcaster.sendTransform(
+					tf::StampedTransform(T_RC, info_msg->header.stamp, info_msg->header.frame_id,
+								"camera_coordinates"));
 
 }
 
@@ -182,11 +193,6 @@ void VisualOdometryLogic::drawFeatures(Mat& frame, Features2D& features,
 	}
 
 	max_id = new_max_id;
-}
-
-VisualOdometryLogic::~VisualOdometryLogic()
-{
-
 }
 
 void VisualOdometryLogic::computeError(const tf::Transform& Tnew, const ros::Time& stamp)
@@ -212,20 +218,20 @@ void VisualOdometryLogic::computeError(const tf::Transform& Tnew, const ros::Tim
 
 		tf::Quaternion R_error = T_WC.getRotation()*R_gt.inverse();
 
-		std::cout << "t_gt    = " << t_gt[0] << ", " << t_gt[1] << ", " << t_gt[2]  << std::endl;
+		/*std::cout << "t_gt    = " << t_gt[0] << ", " << t_gt[1] << ", " << t_gt[2]  << std::endl;
 		std::cout << "t       = " << t[0] << ", " << t[1] << ", " << t[2]  << std::endl;
-		std::cout << "t_error = " << t_error[0] << ", " << t_error[1] << ", " << t_error[2]  << std::endl;
+		std::cout << "t_error = " << t_error[0] << ", " << t_error[1] << ", " << t_error[2]  << std::endl;*/
 
 		tf::Matrix3x3 R_errorMat(R_error);
 
 		double rollError, pitchError, yawError;
 
-		Rmat_gt.getRPY(rollError, pitchError, yawError);
+		/*Rmat_gt.getRPY(rollError, pitchError, yawError);
 		std::cout << "Rgt     = " << rollError << "," << pitchError << "," << yawError << std::endl;
 		Rmat.getRPY(rollError, pitchError, yawError);
 		std::cout << "R       = " << rollError << "," << pitchError << "," << yawError << std::endl;
 		R_errorMat.getRPY(rollError, pitchError, yawError);
-		std::cout << "R_error = " << rollError << "," << pitchError << "," << yawError << std::endl;
+		std::cout << "R_error = " << rollError << "," << pitchError << "," << yawError << std::endl;*/
 
 		//save gt transform
 		Tgt = transform;
