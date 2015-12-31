@@ -35,19 +35,14 @@ int main(int argc, char *argv[])
 
 	ROS_INFO("TF test started");
 
-	tf::Matrix3x3 R_CR(0, -1, 0, //
-				0, 0, -1, //
-				1, 0, 0);
-
-	tf::Matrix3x3 R_RC(0, 0, 1, //
-				-1, 0, 0, //
-				0, -1, 0);
+	tf::Quaternion q_RC(0.5, -0.5, 0.5, 0.5);
+	tf::Quaternion q_CR(0.5, -0.5, 0.5, -0.5);
 	tf::Vector3 t0(0, 0, 0);
 
-	T_CR.setBasis(R_CR);
+	T_CR.setRotation(q_CR);
 	T_CR.setOrigin(t0);
 
-	T_RC.setBasis(R_RC);
+	T_RC.setRotation(q_RC);
 	T_RC.setOrigin(t0);
 
 
