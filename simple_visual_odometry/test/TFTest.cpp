@@ -35,8 +35,8 @@ int main(int argc, char *argv[])
 
 	ROS_INFO("TF test started");
 
-	tf::Quaternion q_RC(0.5, -0.5, 0.5, 0.5);
-	tf::Quaternion q_CR(0.5, -0.5, 0.5, -0.5);
+	tf::Quaternion q_CR(0.5, -0.5, 0.5, 0.5);
+	tf::Quaternion q_RC(0.5, -0.5, 0.5, -0.5);
 	tf::Vector3 t0(0, 0, 0);
 
 	T_CR.setRotation(q_CR);

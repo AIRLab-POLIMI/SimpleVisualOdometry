@@ -40,8 +40,8 @@ VisualOdometryLogic::VisualOdometryLogic(string imageTopic, ros::NodeHandle& n) 
 				&VisualOdometryLogic::handleImage, this);
 
 	//Init rotation camera/robot
-	tf::Quaternion q_RC(0.5, -0.5, 0.5, 0.5);
-	tf::Quaternion q_CR(0.5, -0.5, 0.5, -0.5);
+	tf::Quaternion q_CR(0.5, -0.5, 0.5, 0.5);
+	tf::Quaternion q_RC(0.5, -0.5, 0.5, -0.5);
 	tf::Vector3 t0(0, 0, 0);
 
 	T_CR.setRotation(q_CR);
