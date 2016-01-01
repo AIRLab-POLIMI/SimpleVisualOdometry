@@ -156,7 +156,7 @@ void VisualOdometryLogic::trackPose(
 		//std::cout << t << std::endl;
 		//std::cout << R << std::endl;
 
-		T_WC = T_WC * T_new;
+		T_WC = T_WC * T_new.inverse();
 
 		computeError(T_new, info_msg->header.stamp);
 
