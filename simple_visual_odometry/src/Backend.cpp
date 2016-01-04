@@ -49,20 +49,6 @@ inline std::ostream& operator<<(std::ostream& os, const std::vector<unsigned cha
     return os;
 }
 
-double countInliers(const std::vector<unsigned char>& v)
-{
-	double count = 0;
-	for(auto in : v)
-	{
-		if(in)
-			count += 1.0;
-	}
-
-	count *= 100.0/v.size();
-
-	return count;
-}
-
 Backend::Backend()
 {
 	computed = false;
@@ -112,7 +98,7 @@ void Backend2D::computeTransformation(Features2D& trackedFeatures, Features2D& f
 				R = C(Rect(0, 0, 3, 3));
 
 
-				std::cout << "t scaled: " << t.t() << std::endl;
+				std::cout << "scale: " << scale << " t scaled: " << t.t() << std::endl;
 
 				computed = true;
 
@@ -128,6 +114,7 @@ void Backend2D::computeTransformation(Features2D& trackedFeatures, Features2D& f
 			}
 			catch(no_points_exception& e)
 			{
+				std::cout << "LOST--------------------------------------------------------------------" << std::endl;
 				old3DPoints = Features3Dn();
 			}
 		}
@@ -274,10 +261,12 @@ double Backend2D::estimateScale(Features3Dn& new3DPoints)
 
 	int N = scaleVector.size();
 
-	if (N == 0)
+	std::cout << "N: " << N << std::endl;
+
+	if (N < 100)
 		throw low_parallax_exception();
 
-	return estimateScaleMedian(scaleVector);
+	return estimateScaleMean(scaleVector);
 }
 
 double Backend2D::estimateScaleMedian(vector<double>& scaleVector)

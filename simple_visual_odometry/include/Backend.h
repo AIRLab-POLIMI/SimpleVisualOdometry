@@ -69,8 +69,8 @@ public:
 		}
 		else
 		{
-			started = true;
-			return deltaFeatures > 50.0;
+			started = deltaFeatures > 50.0;
+			return started;
 		}
 	}
 

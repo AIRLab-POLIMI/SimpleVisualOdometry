@@ -158,7 +158,7 @@ int recoverPose( const Mat & E, InputArray _points1, InputArray _points2, Mat & 
 	// Notice here a threshold dist is used to filter
 	// out far away points (i.e. infinite points) since 
 	// there depth may vary between postive and negtive. 
-	double dist = 50.0; 
+	double dist = 100.0;
 	Mat Q; 
 	triangulatePoints(P0, P1, points1, points2, Q); 
 	Mat mask1 = Q.row(2).mul(Q.row(3)) > 0; 
