@@ -39,8 +39,8 @@ public:
 
 private:
 	// number of cells
-	static const size_t nx = 16;
-	static const size_t ny = 10;
+	static const size_t nx = 64;
+	static const size_t ny = 40;
 
 	// Data needed by the algorithm
 	bool isFree[nx][ny];

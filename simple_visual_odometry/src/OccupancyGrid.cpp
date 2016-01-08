@@ -53,10 +53,23 @@ void OccupancyGrid::addPoint(Point2f& p)
 
 bool OccupancyGrid::isNewFeature(Point2f& p)
 {
-	size_t i = p.x / Ix;
-	size_t j = p.y / Iy;
+	int i = p.x / Ix;
+	int j = p.y / Iy;
 
-	return isFree[i][j];
+	bool isNew = true;
+
+	unsigned int minX = std::max(0, i - 1);
+	unsigned int maxX = std::min((int)nx, i + 2);
+
+	unsigned int minY = std::max(0, j - 1);
+	unsigned int maxY = std::min((int)ny, j + 2);
+
+	for(unsigned int x = minX; x < maxX; x++)
+		for(unsigned int y = minY; y < maxY; y++)
+			isNew = isNew && isFree[x][y];
+
+
+	return isNew;
 }
 
 void OccupancyGrid::resetGrid()
