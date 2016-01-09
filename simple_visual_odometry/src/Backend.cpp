@@ -114,7 +114,7 @@ void Backend2D::computeTransformation(Features2D& trackedFeatures,
 			catch (no_points_exception& e)
 			{
 				std::cout
-							<< "LOST--------------------------------------------------------------------"
+							<< "LOST!"
 							<< std::endl;
 				old3DPoints = Features3Dn();
 			}
