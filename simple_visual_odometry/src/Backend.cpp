@@ -273,7 +273,7 @@ double Backend2D::estimateScale(Features3Dn& new3DPoints)
 	if (N == 0)
 		throw low_parallax_exception();
 
-	return estimateScaleMean(scaleVector);
+	return estimateScaleMedian(scaleVector);
 }
 
 double Backend2D::estimateScaleMedian(vector<double>& scaleVector)
