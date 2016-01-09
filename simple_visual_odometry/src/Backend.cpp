@@ -96,8 +96,8 @@ void Backend2D::computeTransformation(Features2D& trackedFeatures,
 				t = Mat(scale * C.col(3));
 				R = C(Rect(0, 0, 3, 3));
 
-				std::cout << "scale: " << scale << " t scaled: " << t.t()
-							<< std::endl;
+				/*std::cout << "scale: " << scale << " t scaled: " << t.t()
+							<< std::endl;*/
 
 				computed = true;
 
@@ -109,7 +109,7 @@ void Backend2D::computeTransformation(Features2D& trackedFeatures,
 			}
 			catch (low_parallax_exception& e)
 			{
-				std::cout << "low parallax" << std::endl;
+				//std::cout << "low parallax" << std::endl;
 			}
 			catch (no_points_exception& e)
 			{
@@ -177,7 +177,6 @@ Mat Backend2D::recoverCameraFromEssential(Features2Dn& oldFeaturesNorm,
 	vector<Vec2d> points1 = oldFeaturesNorm.getPoints();
 	vector<Vec2d> points2 = newFeaturesNorm.getPoints();
 
-	//Mat E = findFundamentalMat(points1, points2, FM_RANSAC, 1.0/lamdaMax, 0.9, mask);
 	Mat E = findEssentialMat(points1, points2, 1.0, cv::Point2d(0, 0),
 				FM_RANSAC, 0.99, 0.5 / Kscale, mask);
 
@@ -188,8 +187,8 @@ Mat Backend2D::recoverCameraFromEssential(Features2Dn& oldFeaturesNorm,
 
 	int newInliers = recoverPose(E, points1, points2, R_e, t_e, mask);
 
-	std::cout << "points: " << points1.size() << " ransac inliers: " << inliers << " triang inliers: "
-				<< newInliers << std::endl;
+	/*std::cout << "points: " << points1.size() << " ransac inliers: " << inliers
+				<< " triang inliers: " << newInliers << std::endl;*/
 
 	if (newInliers < inliers / 2)
 		throw low_parallax_exception();
@@ -268,7 +267,7 @@ double Backend2D::estimateScale(Features3Dn& new3DPoints)
 
 	int N = scaleVector.size();
 
-	std::cout << "N: " << N << std::endl;
+	//std::cout << "N: " << N << std::endl;
 
 	if (N == 0)
 		throw low_parallax_exception();
