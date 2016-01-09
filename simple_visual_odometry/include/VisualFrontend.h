@@ -59,7 +59,7 @@ private:
 	OccupancyGrid grid;
 
 	//parameters
-	const int thresholdExtraction = 50;
+	const int thresholdExtraction = 20;
 	const double thresholdFBError = 1.0;
 
 };
