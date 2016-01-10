@@ -21,18 +21,8 @@
  *  along with simple_visual_odometry.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef INCLUDE_CONFIGMANAGER_H_
-#define INCLUDE_CONFIGMANAGER_H_
-
-#include <ros/ros.h>
-#include <Eigen/Geometry>
-
-struct ConfigManager
-{
-	ConfigManager();
-
-	Eigen::Affine3d T_WR_;
-};
+#include "TrajectoryPublisher.h"
 
 
-#endif /* INCLUDE_CONFIGMANAGER_H_ */
+
+

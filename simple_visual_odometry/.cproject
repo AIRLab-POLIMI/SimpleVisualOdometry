@@ -21,9 +21,25 @@
 							<builder buildPath="/home/dave/ros-extra" cleanBuildTarget="clean --pkg simple_visual_odometry" command="catkin_make" id="cdt.managedbuild.target.gnu.builder.base.1696463097" incrementalBuildTarget="--pkg simple_visual_odometry" keepEnvironmentInBuildfile="false" managedBuildOn="false" name="Gnu Make Builder" superClass="cdt.managedbuild.target.gnu.builder.base"/>
 							<tool id="cdt.managedbuild.tool.gnu.archiver.base.2032458188" name="GCC Archiver" superClass="cdt.managedbuild.tool.gnu.archiver.base"/>
 							<tool id="cdt.managedbuild.tool.gnu.cpp.compiler.base.992729252" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.base">
+								<option id="gnu.cpp.compiler.option.include.paths.2105595595" superClass="gnu.cpp.compiler.option.include.paths" valueType="includePath">
+									<listOptionValue builtIn="false" value="/home/dave/ros-extra/devel/include"/>
+									<listOptionValue builtIn="false" value="/home/dave/ReLe/devel/include"/>
+									<listOptionValue builtIn="false" value="/home/dave/CognitiveSlam/devel/include"/>
+									<listOptionValue builtIn="false" value="/home/dave/ROAMFREE/devel/include"/>
+									<listOptionValue builtIn="false" value="/home/dave/ros/install_isolated/include"/>
+									<listOptionValue builtIn="false" value="/usr/include/eigen3"/>
+								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.501310156" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.c.compiler.base.902163249" name="GCC C Compiler" superClass="cdt.managedbuild.tool.gnu.c.compiler.base">
+								<option id="gnu.c.compiler.option.include.paths.118679343" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
+									<listOptionValue builtIn="false" value="/home/dave/ros-extra/devel/include"/>
+									<listOptionValue builtIn="false" value="/home/dave/ReLe/devel/include"/>
+									<listOptionValue builtIn="false" value="/home/dave/CognitiveSlam/devel/include"/>
+									<listOptionValue builtIn="false" value="/home/dave/ROAMFREE/devel/include"/>
+									<listOptionValue builtIn="false" value="/home/dave/ros/install_isolated/include"/>
+									<listOptionValue builtIn="false" value="/usr/include/eigen3"/>
+								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.180183180" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.c.linker.base.582660161" name="GCC C Linker" superClass="cdt.managedbuild.tool.gnu.c.linker.base"/>
@@ -34,6 +50,14 @@
 								</inputType>
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.assembler.base.2015306260" name="GCC Assembler" superClass="cdt.managedbuild.tool.gnu.assembler.base">
+								<option id="gnu.both.asm.option.include.paths.1512101579" superClass="gnu.both.asm.option.include.paths" valueType="includePath">
+									<listOptionValue builtIn="false" value="/home/dave/ros-extra/devel/include"/>
+									<listOptionValue builtIn="false" value="/home/dave/ReLe/devel/include"/>
+									<listOptionValue builtIn="false" value="/home/dave/CognitiveSlam/devel/include"/>
+									<listOptionValue builtIn="false" value="/home/dave/ROAMFREE/devel/include"/>
+									<listOptionValue builtIn="false" value="/home/dave/ros/install_isolated/include"/>
+									<listOptionValue builtIn="false" value="/usr/include/eigen3"/>
+								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.249614798" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
 							</tool>
 						</toolChain>
@@ -42,9 +66,6 @@
 			</storageModule>
 			<storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>
 		</cconfiguration>
-	</storageModule>
-	<storageModule moduleId="scannerConfiguration">
-		<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
 	</storageModule>
 	<storageModule moduleId="cdtBuildSystem" version="4.0.0">
 		<project id="simple_visual_odometry.null.618656017" name="simple_visual_odometry"/>
@@ -55,4 +76,14 @@
 			<resource resourceType="PROJECT" workspacePath="/simple_visual_odometry"/>
 		</configuration>
 	</storageModule>
+	<storageModule moduleId="scannerConfiguration">
+		<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+		<scannerConfigBuildInfo instanceId="cdt.managedbuild.toolchain.gnu.base.2118181947;cdt.managedbuild.toolchain.gnu.base.2118181947.16293602;cdt.managedbuild.tool.gnu.c.compiler.base.902163249;cdt.managedbuild.tool.gnu.c.compiler.input.180183180">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+		</scannerConfigBuildInfo>
+		<scannerConfigBuildInfo instanceId="cdt.managedbuild.toolchain.gnu.base.2118181947;cdt.managedbuild.toolchain.gnu.base.2118181947.16293602;cdt.managedbuild.tool.gnu.cpp.compiler.base.992729252;cdt.managedbuild.tool.gnu.cpp.compiler.input.501310156">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+		</scannerConfigBuildInfo>
+	</storageModule>
+	<storageModule moduleId="org.eclipse.cdt.internal.ui.text.commentOwnerProjectMappings"/>
 </cproject>

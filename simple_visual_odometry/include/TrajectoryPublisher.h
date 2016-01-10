@@ -21,18 +21,14 @@
  *  along with simple_visual_odometry.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef INCLUDE_CONFIGMANAGER_H_
-#define INCLUDE_CONFIGMANAGER_H_
+#ifndef INCLUDE_TRAJECTORYPUBLISHER_H_
+#define INCLUDE_TRAJECTORYPUBLISHER_H_
 
-#include <ros/ros.h>
-#include <Eigen/Geometry>
-
-struct ConfigManager
+class TrajectoryPublisher
 {
-	ConfigManager();
-
-	Eigen::Affine3d T_WR_;
+public:
 };
 
 
-#endif /* INCLUDE_CONFIGMANAGER_H_ */
+
+#endif /* INCLUDE_TRAJECTORYPUBLISHER_H_ */

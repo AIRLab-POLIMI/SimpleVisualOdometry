@@ -23,8 +23,6 @@
 
 #include "VisualFrontend.h"
 
-#include <ros/ros.h>
-
 using namespace std;
 using namespace cv;
 

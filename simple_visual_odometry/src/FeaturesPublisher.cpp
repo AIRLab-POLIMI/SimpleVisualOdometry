@@ -39,9 +39,7 @@ void FeaturesPublisher::publishFeatureMarkers(Features3Dn& features)
   visualization_msgs::Marker msg;
 
   msg.header.stamp = ros::Time::now();
-  //msg.header.frame_id = "/world";
-  //msg.header.frame_id = "/prosilica_camera";
-  msg.header.frame_id = "/camera_coordinates";
+  msg.header.frame_id = "/camera_link";
   msg.type = visualization_msgs::Marker::CUBE_LIST;
   msg.frame_locked = false;
   msg.ns = "vo";

@@ -27,8 +27,6 @@
 
 #include <image_geometry/pinhole_camera_model.h>
 
-#include <tf/tf.h>
-
 namespace enc = sensor_msgs::image_encodings;
 using namespace cv;
 using namespace std;
@@ -40,19 +38,18 @@ VisualOdometryLogic::VisualOdometryLogic(string imageTopic, ros::NodeHandle& n) 
 				&VisualOdometryLogic::handleImage, this);
 
 	//Init rotation camera/robot
-	tf::Quaternion q_CR(0.5, -0.5, 0.5, 0.5);
-	tf::Quaternion q_RC(0.5, -0.5, 0.5, -0.5);
-	tf::Vector3 t0(0, 0, 0);
+	Eigen::Quaterniond q_CR(0.5, 0.5, -0.5, 0.5);
+	Eigen::Quaterniond q_RC(-0.5, 0.5, -0.5, 0.5);
 
-	T_CR.setRotation(q_CR);
-	T_CR.setOrigin(t0);
+	T_CR.setIdentity();
+	T_CR.rotate(q_CR);
 
-	T_RC.setRotation(q_RC);
-	T_RC.setOrigin(t0);
+	T_RC.setIdentity();
+	T_RC.rotate(q_RC);
 
 	//Init pose
-	T_WC = config.T_WR*T_RC;
-	Tgt = config.T_WR;
+	T_WC = config.T_WR_ * T_RC;
+	Tgt = config.T_WR_;
 
 	//debug window
 	src_window = "Extracted Features";
@@ -146,34 +143,53 @@ void VisualOdometryLogic::trackPose(
 		Vec3d t = backend->getTranslation();
 
 		//Compute new camera pose
-		tf::Vector3 t_tf(t[0], t[1], t[2]);
+		Eigen::Vector3d t_eigen(t[0], t[1], t[2]);
 
-		tf::Matrix3x3 R_tf(R(0, 0), R(0, 1), R(0, 2), R(1, 0), R(1, 1), R(1, 2),
-					R(2, 0), R(2, 1), R(2, 2));
+		Eigen::Matrix3d R_eigen;
+		R_eigen << R(0, 0), R(0, 1), R(0, 2), //
+		R(1, 0), R(1, 1), R(1, 2), //
+		R(2, 0), R(2, 1), R(2, 2);
 
-		tf::Transform T_new(R_tf, t_tf);
+		Eigen::Affine3d T_new;
+		T_new.setIdentity();
+		T_new.translate(t_eigen);
+		T_new.rotate(R_eigen);
 
 		//std::cout << t << std::endl;
 		//std::cout << R << std::endl;
 
 		T_WC = T_WC * T_new.inverse();
 
-		computeError(T_new, info_msg->header.stamp);
-
 	}
 
-
-	tf::Transform T_WR = T_WC*T_CR;
+	Eigen::Affine3d T_WR = T_WC * T_CR;
 
 	//Send Transform
-	tfBroadcaster.sendTransform(
-				tf::StampedTransform(T_WR, info_msg->header.stamp, "world",
-							info_msg->header.frame_id));
+	publishEigenTransform(info_msg->header.stamp, "world", info_msg->header.frame_id, T_WR);
+	publishEigenTransform(info_msg->header.stamp, info_msg->header.frame_id, "camera_link", T_RC);
+}
 
-	tfBroadcaster.sendTransform(
-					tf::StampedTransform(T_RC, info_msg->header.stamp, info_msg->header.frame_id,
-								"camera_coordinates"));
+void VisualOdometryLogic::publishEigenTransform(const ros::Time& stamp,
+			const std::string& parent, const std::string& frame_id,
+			const Eigen::Affine3d& T)
+{
+	geometry_msgs::TransformStamped transformStamped;
 
+	transformStamped.header.stamp = stamp;
+	transformStamped.header.frame_id = parent;
+	transformStamped.child_frame_id = frame_id;
+
+	transformStamped.transform.translation.x = T.translation().x();
+	transformStamped.transform.translation.y = T.translation().y();
+	transformStamped.transform.translation.z = T.translation().z();
+
+	Eigen::Quaterniond q(T.rotation());
+	transformStamped.transform.rotation.x = q.x();
+	transformStamped.transform.rotation.y = q.y();
+	transformStamped.transform.rotation.z = q.z();
+	transformStamped.transform.rotation.w = q.w();
+
+	tfBroadcaster.sendTransform(transformStamped);
 }
 
 void VisualOdometryLogic::drawFeatures(Mat& frame, Features2D& features,
@@ -193,54 +209,6 @@ void VisualOdometryLogic::drawFeatures(Mat& frame, Features2D& features,
 	}
 
 	max_id = new_max_id;
-}
-
-void VisualOdometryLogic::computeError(const tf::Transform& Tnew, const ros::Time& stamp)
-{
-	try
-	{
-		tf::StampedTransform transform;
-		tfListener.lookupTransform("world", "prosilica/camera_link_gt",
-					stamp, transform);
-
-		tf::Vector3 t_gt = transform.getOrigin() - Tgt.getOrigin();
-		tf::Quaternion R_gt = transform.getRotation()*Tgt.getRotation().inverse();
-		tf::Matrix3x3 Rmat_gt(R_gt);
-
-		tf::Vector3 t =  Tnew.getOrigin();
-		tf::Quaternion R = Tnew.getRotation();
-		tf::Matrix3x3 Rmat(R);
-
-		t.normalize();
-		t_gt.normalize();
-
-		tf::Vector3 t_error = t - t_gt;
-
-		tf::Quaternion R_error = T_WC.getRotation()*R_gt.inverse();
-
-		/*std::cout << "t_gt    = " << t_gt[0] << ", " << t_gt[1] << ", " << t_gt[2]  << std::endl;
-		std::cout << "t       = " << t[0] << ", " << t[1] << ", " << t[2]  << std::endl;
-		std::cout << "t_error = " << t_error[0] << ", " << t_error[1] << ", " << t_error[2]  << std::endl;*/
-
-		tf::Matrix3x3 R_errorMat(R_error);
-
-		double rollError, pitchError, yawError;
-
-		/*Rmat_gt.getRPY(rollError, pitchError, yawError);
-		std::cout << "Rgt     = " << rollError << "," << pitchError << "," << yawError << std::endl;
-		Rmat.getRPY(rollError, pitchError, yawError);
-		std::cout << "R       = " << rollError << "," << pitchError << "," << yawError << std::endl;
-		R_errorMat.getRPY(rollError, pitchError, yawError);
-		std::cout << "R_error = " << rollError << "," << pitchError << "," << yawError << std::endl;*/
-
-		//save gt transform
-		Tgt = transform;
-
-	}
-	catch (tf::TransformException &ex)
-	{
-
-	}
 }
 
 int main(int argc, char *argv[])

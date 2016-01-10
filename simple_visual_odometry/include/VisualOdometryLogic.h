@@ -29,10 +29,10 @@
 #include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/image_encodings.h>
 
-#include <tf/transform_broadcaster.h>
-#include <tf/transform_listener.h>
+#include <tf2_ros/transform_broadcaster.h>
 
 #include <opencv2/opencv.hpp>
+#include <Eigen/Geometry>
 
 #include "ConfigManager.h"
 
@@ -53,15 +53,16 @@ public:
 
 protected:
 	void publishFeatures(const std::string& frame_id, ros::Time stamp);
-	void trackPose(const sensor_msgs::CameraInfoConstPtr& info_msg, Features2D& trackedFeatures);
+	void trackPose(const sensor_msgs::CameraInfoConstPtr& info_msg,
+				Features2D& trackedFeatures);
 	void display(cv_bridge::CvImagePtr cv_ptr);
 
 private:
 	void drawFeatures(cv::Mat& frame, Features2D& features,
 				cv::Scalar colorMatched, cv::Scalar colorNew);
-
-
-	void computeError(const tf::Transform& Tnew, const ros::Time& stamp);
+	void publishEigenTransform(const ros::Time& stamp,
+				const std::string& parent, const std::string& frame_id,
+				const Eigen::Affine3d& T);
 
 private:
 	//Ros management
@@ -71,13 +72,12 @@ private:
 	ConfigManager config;
 
 	//Pose Tracking
-	tf::Transform T_WC;
-	tf::Transform Tgt;
-	tf::TransformBroadcaster tfBroadcaster;
-	tf::TransformListener tfListener;
+	tf2_ros::TransformBroadcaster tfBroadcaster;
 
-	tf::Transform T_CR;
-	tf::Transform T_RC;
+	Eigen::Affine3d T_CR;
+	Eigen::Affine3d T_RC;
+	Eigen::Affine3d T_WC;
+	Eigen::Affine3d Tgt;
 
 	//Visual Frontend
 	VisualFrontend frontend;

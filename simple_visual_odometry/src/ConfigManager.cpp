@@ -35,8 +35,9 @@ ConfigManager::ConfigManager()
 	    throw runtime_error("No camera pose specified");
 	  }
 
-	  tf::Vector3 t(T_WR_std[0], T_WR_std[1], T_WR_std[2]);
-	  tf::Quaternion q(T_WR_std[4], T_WR_std[5], T_WR_std[6], T_WR_std[3]);
-
-	  T_WR = tf::Transform(q, t);
+	  Eigen::Vector3d t_(T_WR_std[0], T_WR_std[1], T_WR_std[2]);
+	  Eigen::Quaterniond q_(T_WR_std[3], T_WR_std[4], T_WR_std[5], T_WR_std[6]);
+	  T_WR_.setIdentity();
+	  T_WR_.translate(t_);
+	  T_WR_.rotate(q_);
 }
