@@ -48,8 +48,8 @@ VisualOdometryLogic::VisualOdometryLogic(string imageTopic, ros::NodeHandle& n) 
 	T_RC.rotate(q_RC);
 
 	//Init pose
-	T_WC = config.T_WR_ * T_RC;
-	Tgt = config.T_WR_;
+	T_WC = config.T_WR * T_RC;
+	Tgt = config.T_WR;
 
 	//debug window
 	src_window = "Extracted Features";

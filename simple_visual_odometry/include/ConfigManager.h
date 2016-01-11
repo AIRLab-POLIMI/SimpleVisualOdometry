@@ -31,7 +31,7 @@ struct ConfigManager
 {
 	ConfigManager();
 
-	Eigen::Affine3d T_WR_;
+	Eigen::Affine3d T_WR;
 };
 
 

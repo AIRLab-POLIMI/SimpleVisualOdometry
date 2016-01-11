@@ -37,7 +37,7 @@ ConfigManager::ConfigManager()
 
 	  Eigen::Vector3d t_(T_WR_std[0], T_WR_std[1], T_WR_std[2]);
 	  Eigen::Quaterniond q_(T_WR_std[3], T_WR_std[4], T_WR_std[5], T_WR_std[6]);
-	  T_WR_.setIdentity();
-	  T_WR_.translate(t_);
-	  T_WR_.rotate(q_);
+	  T_WR.setIdentity();
+	  T_WR.translate(t_);
+	  T_WR.rotate(q_);
 }

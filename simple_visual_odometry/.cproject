@@ -21,7 +21,7 @@
 							<builder buildPath="/home/dave/ros-extra" cleanBuildTarget="clean --pkg simple_visual_odometry" command="catkin_make" id="cdt.managedbuild.target.gnu.builder.base.1696463097" incrementalBuildTarget="--pkg simple_visual_odometry" keepEnvironmentInBuildfile="false" managedBuildOn="false" name="Gnu Make Builder" superClass="cdt.managedbuild.target.gnu.builder.base"/>
 							<tool id="cdt.managedbuild.tool.gnu.archiver.base.2032458188" name="GCC Archiver" superClass="cdt.managedbuild.tool.gnu.archiver.base"/>
 							<tool id="cdt.managedbuild.tool.gnu.cpp.compiler.base.992729252" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.base">
-								<option id="gnu.cpp.compiler.option.include.paths.2105595595" superClass="gnu.cpp.compiler.option.include.paths" valueType="includePath">
+								<option id="gnu.cpp.compiler.option.include.paths.1045248693" superClass="gnu.cpp.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="/home/dave/ros-extra/devel/include"/>
 									<listOptionValue builtIn="false" value="/home/dave/ReLe/devel/include"/>
 									<listOptionValue builtIn="false" value="/home/dave/CognitiveSlam/devel/include"/>
@@ -32,7 +32,7 @@
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.501310156" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.c.compiler.base.902163249" name="GCC C Compiler" superClass="cdt.managedbuild.tool.gnu.c.compiler.base">
-								<option id="gnu.c.compiler.option.include.paths.118679343" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
+								<option id="gnu.c.compiler.option.include.paths.1321160757" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="/home/dave/ros-extra/devel/include"/>
 									<listOptionValue builtIn="false" value="/home/dave/ReLe/devel/include"/>
 									<listOptionValue builtIn="false" value="/home/dave/CognitiveSlam/devel/include"/>
@@ -50,7 +50,7 @@
 								</inputType>
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.assembler.base.2015306260" name="GCC Assembler" superClass="cdt.managedbuild.tool.gnu.assembler.base">
-								<option id="gnu.both.asm.option.include.paths.1512101579" superClass="gnu.both.asm.option.include.paths" valueType="includePath">
+								<option id="gnu.both.asm.option.include.paths.957537553" superClass="gnu.both.asm.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="/home/dave/ros-extra/devel/include"/>
 									<listOptionValue builtIn="false" value="/home/dave/ReLe/devel/include"/>
 									<listOptionValue builtIn="false" value="/home/dave/CognitiveSlam/devel/include"/>
@@ -85,5 +85,4 @@
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
 		</scannerConfigBuildInfo>
 	</storageModule>
-	<storageModule moduleId="org.eclipse.cdt.internal.ui.text.commentOwnerProjectMappings"/>
 </cproject>
