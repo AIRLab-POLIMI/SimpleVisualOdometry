@@ -32,7 +32,7 @@ using namespace cv;
 using namespace std;
 
 VisualOdometryLogic::VisualOdometryLogic(string imageTopic, ros::NodeHandle& n) :
-			it(n)
+			it(n), trajectoryPublisher("camera")
 {
 	imageSubscriber = it.subscribeCamera(imageTopic + "image_rect_color", 1,
 				&VisualOdometryLogic::handleImage, this);
@@ -167,6 +167,9 @@ void VisualOdometryLogic::trackPose(
 	//Send Transform
 	publishEigenTransform(info_msg->header.stamp, "world", info_msg->header.frame_id, T_WR);
 	publishEigenTransform(info_msg->header.stamp, info_msg->header.frame_id, "camera_link", T_RC);
+
+	//Send trajectory
+	trajectoryPublisher.publishPath(T_WR, info_msg->header.stamp);
 }
 
 void VisualOdometryLogic::publishEigenTransform(const ros::Time& stamp,

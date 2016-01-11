@@ -4,7 +4,10 @@ find_package(catkin REQUIRED COMPONENTS roscpp
                                         cv_bridge 
                                         image_transport
                                         image_geometry
-                                        tf)
+                                        tf2_ros
+                                        tf2_eigen
+                                        nav_msgs
+                                        visualization_msgs)
                                         
 find_package(OpenCV REQUIRED)
 find_package(Eigen3 REQUIRED)

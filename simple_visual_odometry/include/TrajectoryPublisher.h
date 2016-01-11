@@ -24,9 +24,20 @@
 #ifndef INCLUDE_TRAJECTORYPUBLISHER_H_
 #define INCLUDE_TRAJECTORYPUBLISHER_H_
 
+#include <nav_msgs/Path.h>
+#include <Eigen/Geometry>
+#include <ros/ros.h>
+
 class TrajectoryPublisher
 {
 public:
+	TrajectoryPublisher(const std::string& frame_id);
+	void publishPath(const Eigen::Affine3d& T, const ros::Time& stamp);
+
+private:
+	nav_msgs::Path path;
+	ros::Publisher trajectory_pub;
+
 };
 
 

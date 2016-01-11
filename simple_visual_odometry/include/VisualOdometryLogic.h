@@ -39,6 +39,8 @@
 #include "VisualFrontend.h"
 #include "Backend.h"
 
+#include "TrajectoryPublisher.h"
+
 class VisualOdometryLogic
 {
 public:
@@ -73,6 +75,7 @@ private:
 
 	//Pose Tracking
 	tf2_ros::TransformBroadcaster tfBroadcaster;
+	TrajectoryPublisher trajectoryPublisher;
 
 	Eigen::Affine3d T_CR;
 	Eigen::Affine3d T_RC;

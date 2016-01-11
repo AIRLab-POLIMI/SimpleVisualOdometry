@@ -23,6 +23,29 @@
 
 #include "TrajectoryPublisher.h"
 
+#include <tf2_eigen/tf2_eigen.h>
+
+TrajectoryPublisher::TrajectoryPublisher(const std::string& frame_id)
+{
+	ros::NodeHandle n;
+
+	trajectory_pub = n.advertise<nav_msgs::Path>("/visualization/path/" + frame_id, 1);
+}
 
 
+void TrajectoryPublisher::publishPath(const Eigen::Affine3d& T, const ros::Time& stamp)
+{
+	path.header.stamp = ros::Time::now();
+	path.header.frame_id = "world";
 
+
+	tf2::Stamped<Eigen::Affine3d> stamped(T, stamp, "world");
+
+	geometry_msgs::PoseStamped  msgPose;
+
+	tf2::convert(stamped, msgPose);
+
+	path.poses.push_back(msgPose);
+
+	trajectory_pub.publish(path);
+}
