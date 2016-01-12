@@ -2,7 +2,7 @@
  * simple_visual_odometry,
  *
  *
- * Copyright (C) 2015 Davide Tateo
+ * Copyright (C) 2016 Davide Tateo
  * Versione 1.0
  *
  * This file is part of simple_visual_odometry.
@@ -21,89 +21,14 @@
  *  along with simple_visual_odometry.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "Backend.h"
+#include "Backend2D.h"
 
-using namespace cv;
 using namespace std;
+using namespace cv;
 
-class low_parallax_exception: public Exception
-{
 
-};
-
-class no_points_exception: public Exception
-{
-
-};
-
-inline std::ostream& operator<<(std::ostream& os,
-			const std::vector<unsigned char>& v)
-{
-	if (!v.empty())
-	{
-		size_t i;
-		for (i = 0; i + 1 < v.size(); i++)
-			os << (v[i] != 0) << ",";
-
-		os << v[i];
-	}
-	return os;
-}
-
-Backend::Backend()
-{
-	Kscale = 0;
-	state = Initial;
-}
-
-cv::Vec2d Backend::computeNormalizedPoint(cv::Point2f& point)
-{
-	cv::Vec3d hpt;
-	hpt[0] = point.x;
-	hpt[1] = point.y;
-	hpt[2] = 1;
-
-	hpt = Kinv * hpt;
-
-	cv::Vec2d pt;
-	pt[0] = hpt[0];
-	pt[1] = hpt[1];
-
-	return pt;
-}
-
-double Backend::computeNormalizedFeatures(Features2D& oldFeatures,
-			Features2D& newFeatures, Features2Dn& oldFeaturesNorm,
-			Features2Dn& newFeaturesNorm)
-{
-
-	double deltaMean = 0;
-	unsigned int N = 0;
-
-	for (unsigned int i = 0; i < newFeatures.size(); i++)
-	{
-		unsigned int id = newFeatures.getId(i);
-
-		if (oldFeatures.contains(id))
-		{
-			unsigned int index = oldFeatures.getIndex(id);
-
-			Vec2d oldPoint = computeNormalizedPoint(oldFeatures[index]);
-			Vec2d newPoint = computeNormalizedPoint(newFeatures[i]);
-
-			oldFeaturesNorm.addPoint(oldPoint, id);
-			newFeaturesNorm.addPoint(newPoint, id);
-
-			deltaMean += cv::norm(oldFeatures[index] - newFeatures[i]);
-			N++;
-		}
-	}
-
-	deltaMean /= N;
-	return deltaMean;
-}
-
-Eigen::Affine3d Backend2D::computePose(Features2D& trackedFeatures, Features2D& features)
+Eigen::Affine3d Backend2D::computePose(Features2D& trackedFeatures,
+			Features2D& features)
 {
 	Eigen::Affine3d T;
 	T.setIdentity();
@@ -148,7 +73,7 @@ Eigen::Affine3d Backend2D::computePose(Features2D& trackedFeatures, Features2D& 
 				T = cameraToTransform(C, scale);
 
 				//Compute new pose
-				T_WC = T_WC*T;
+				T_WC = T_WC * T;
 
 				//Compute points
 				old3DPoints = triangulated;
@@ -163,11 +88,11 @@ Eigen::Affine3d Backend2D::computePose(Features2D& trackedFeatures, Features2D& 
 				//Publish features TODO remove
 				publisher.publishFeatureMarkers(old3DPoints);
 			}
-			catch (low_parallax_exception& e)
+			catch (Backend::low_parallax_exception& e)
 			{
 
 			}
-			catch (no_points_exception& e)
+			catch (Backend::no_points_exception& e)
 			{
 				std::cout << "LOST!" << std::endl;
 				old3DPoints = Features3Dn();
@@ -203,7 +128,7 @@ Mat Backend2D::recoverCameraFromEssential(Features2Dn& oldFeaturesNorm,
 	 << " triang inliers: " << newInliers << std::endl;*/
 
 	if (newInliers < inliers / 2)
-		throw low_parallax_exception();
+		throw Backend::low_parallax_exception();
 
 	Mat C;
 	hconcat(R_e, t_e, C);
@@ -274,7 +199,7 @@ double Backend2D::estimateScale(Features3Dn& new3DPoints)
 
 	if (count == 0)
 	{
-		throw no_points_exception();
+		throw Backend::no_points_exception();
 	}
 
 	int N = scaleVector.size();
@@ -282,7 +207,7 @@ double Backend2D::estimateScale(Features3Dn& new3DPoints)
 	//std::cout << "N: " << N << std::endl;
 
 	if (N == 0)
-		throw low_parallax_exception();
+		throw Backend::low_parallax_exception();
 
 	return estimateScaleMedian(scaleVector);
 }

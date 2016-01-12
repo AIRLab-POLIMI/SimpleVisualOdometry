@@ -29,6 +29,8 @@
 
 #include <tf2_eigen/tf2_eigen.h>
 
+#include "Backend2D.h"
+
 namespace enc = sensor_msgs::image_encodings;
 using namespace cv;
 using namespace std;

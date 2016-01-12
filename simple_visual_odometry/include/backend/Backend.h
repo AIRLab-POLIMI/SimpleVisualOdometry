@@ -39,6 +39,16 @@ public:
 		Initial, Initializing, Tracking, Lost
 	};
 
+	class low_parallax_exception: public Exception
+	{
+
+	};
+
+	class no_points_exception: public Exception
+	{
+
+	};
+
 public:
 	Backend();
 
@@ -49,6 +59,8 @@ public:
 
 	virtual Eigen::Affine3d computePose(Features2D& trackedFeatures,
 				Features2D& features) = 0;
+
+	virtual Features3Dn getFeatures() const  = 0;
 
 	inline void setK(const cv::Matx33d& K)
 	{
@@ -118,38 +130,6 @@ protected:
 
 	//Pose data
 	Eigen::Affine3d T_WC;
-};
-
-class Backend2D: public Backend
-{
-public:
-	virtual Eigen::Affine3d computePose(Features2D& trackedFeatures,
-				Features2D& features) override;
-
-private:
-	Eigen::Affine3d computeTransform(Features2Dn featuresOldnorm,
-				Features2Dn featuresNewnorm);
-
-	cv::Mat recoverCameraFromEssential(Features2Dn& oldFeaturesNorm,
-				Features2Dn& newFeaturesNorm, std::vector<unsigned char>& mask);
-
-	Features3Dn triangulatePoints(Features2Dn& oldFeaturesNorm,
-				Features2Dn& newFeaturesNorm, cv::Mat C,
-				std::vector<unsigned char>& mask);
-
-	double estimateScale(Features3Dn& new3DPoints);
-
-	double estimateScaleMedian(std::vector<double>& scaleVector);
-	double estimateScaleMean(std::vector<double>& scaleVector);
-
-private:
-	//Features data
-	Features2D oldFeatures;
-	Features3Dn old3DPoints;
-
-	//publisher TODO not here!
-	FeaturesPublisher publisher;
-
 };
 
 #endif /* INCLUDE_BACKEND_H_ */
