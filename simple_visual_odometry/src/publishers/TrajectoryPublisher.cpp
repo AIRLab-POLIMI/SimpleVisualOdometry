@@ -21,7 +21,7 @@
  *  along with simple_visual_odometry.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "TrajectoryPublisher.h"
+#include "publishers/TrajectoryPublisher.h"
 
 #include <tf2_eigen/tf2_eigen.h>
 

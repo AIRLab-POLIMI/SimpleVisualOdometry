@@ -25,7 +25,7 @@
 #define INCLUDE_FEATURESPUBLISHER_H_
 
 #include <ros/ros.h>
-#include "Features.h"
+#include "core/Features.h"
 
 class FeaturesPublisher
 {

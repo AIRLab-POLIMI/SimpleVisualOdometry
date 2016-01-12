@@ -21,7 +21,7 @@
  *  along with simple_visual_odometry.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "VisualFrontend.h"
+#include "frontend/VisualFrontend.h"
 
 using namespace std;
 using namespace cv;

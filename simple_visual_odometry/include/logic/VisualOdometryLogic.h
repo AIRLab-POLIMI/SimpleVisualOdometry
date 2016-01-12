@@ -37,10 +37,10 @@
 
 #include "ConfigManager.h"
 
-#include "VisualFrontend.h"
-#include "Backend.h"
+#include "frontend/VisualFrontend.h"
+#include "backend/Backend.h"
 
-#include "TrajectoryPublisher.h"
+#include "publishers/TrajectoryPublisher.h"
 
 class VisualOdometryLogic
 {

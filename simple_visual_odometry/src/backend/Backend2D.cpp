@@ -21,7 +21,7 @@
  *  along with simple_visual_odometry.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "Backend2D.h"
+#include "backend/Backend2D.h"
 
 using namespace std;
 using namespace cv;
@@ -84,9 +84,6 @@ Eigen::Affine3d Backend2D::computePose(Features2D& trackedFeatures,
 
 				//Update state
 				state = Tracking;
-
-				//Publish features TODO remove
-				publisher.publishFeatureMarkers(old3DPoints);
 			}
 			catch (Backend::low_parallax_exception& e)
 			{

@@ -21,7 +21,7 @@
  *  along with simple_visual_odometry.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "OccupancyGrid.h"
+#include "frontend/OccupancyGrid.h"
 
 using namespace std;
 using namespace cv;

@@ -21,7 +21,7 @@
  *  along with simple_visual_odometry.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "Backend.h"
+#include "backend/Backend.h"
 
 using namespace cv;
 using namespace std;

@@ -25,9 +25,7 @@
 #define INCLUDE_BACKEND_H_
 
 #include "five-point.hpp"
-#include "Features.h"
-
-#include "FeaturesPublisher.h"
+#include "core/Features.h"
 
 #include <Eigen/Geometry>
 

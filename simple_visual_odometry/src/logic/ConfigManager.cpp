@@ -21,7 +21,7 @@
  *  along with simple_visual_odometry.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ConfigManager.h"
+#include "logic/ConfigManager.h"
 
 using namespace std;
 

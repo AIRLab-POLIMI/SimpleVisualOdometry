@@ -24,7 +24,7 @@
 #ifndef INCLUDE_VISUALFRONTEND_H_
 #define INCLUDE_VISUALFRONTEND_H_
 
-#include "Features.h"
+#include "core/Features.h"
 #include "OccupancyGrid.h"
 
 class VisualFrontend

@@ -57,10 +57,6 @@ private:
 	//Features data
 	Features2D oldFeatures;
 	Features3Dn old3DPoints;
-
-	//publisher TODO not here!
-	FeaturesPublisher publisher;
-
 };
 
 

@@ -21,7 +21,7 @@
  *  along with simple_visual_odometry.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "FeaturesPublisher.h"
+#include "publishers/FeaturesPublisher.h"
 #include <visualization_msgs/Marker.h>
 
 FeaturesPublisher::FeaturesPublisher()
