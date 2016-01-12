@@ -29,49 +29,38 @@
 
 #include "FeaturesPublisher.h"
 
+#include <Eigen/Geometry>
+
 class Backend
 {
 public:
+	enum State
+	{
+		Initial, Initializing, Tracking, Lost
+	};
+
+public:
 	Backend();
 
-	virtual void computeTransformation(Features2D& trackedFeatures, Features2D& features) = 0;
-
-	inline bool transformationComputed()
+	inline void setCameraPose(Eigen::Affine3d& T_WC)
 	{
-		bool val = computed;
-		computed = false;
-		return val;
+		this->T_WC = T_WC;
 	}
 
-	inline cv::Vec3d getTranslation()
-	{
-		return t;
-	}
-
-	inline cv::Matx33d getRotation()
-	{
-		return R;
-	}
+	virtual Eigen::Affine3d computePose(Features2D& trackedFeatures,
+				Features2D& features) = 0;
 
 	inline void setK(const cv::Matx33d& K)
 	{
 		Kinv = K.inv();
-		double fx = K(0,0);
-		double fy = K(1,1);
-		Kscale = (fx+fy)/2;
+		double fx = K(0, 0);
+		double fy = K(1, 1);
+		Kscale = (fx + fy) / 2;
 	}
 
-	inline bool sufficientDelta(double deltaFeatures)
+	State getState() const
 	{
-		if(started)
-		{
-			return deltaFeatures > 1.0;
-		}
-		else
-		{
-			started = deltaFeatures > 20.0;
-			return started;
-		}
+		return state;
 	}
 
 	virtual ~Backend()
@@ -80,34 +69,73 @@ public:
 	}
 
 protected:
-	bool computed;
-	cv::Vec3d t;
-	cv::Matx33d R;
+	inline bool sufficientDelta(double deltaFeatures)
+	{
+		switch (state)
+		{
+			case Initial:
+			case Lost:
+				if (deltaFeatures > 20.0)
+				{
+					state = Initializing;
+					return true;
+				}
+				else
+				{
+					return false;
+				}
 
+			default:
+				return deltaFeatures > 1.0;
+		}
+	}
+
+	inline Eigen::Affine3d cameraToTransform(const cv::Mat& C, double scale =
+				1.0)
+	{
+		Eigen::Matrix4d Tm;
+		Tm << //
+		C.at<double>(0, 0), C.at<double>(0, 1), C.at<double>(0, 2), scale*C.at<double>(0, 3), //
+		C.at<double>(1, 0), C.at<double>(1, 1), C.at<double>(1, 2), scale*C.at<double>(1, 3), //
+		C.at<double>(2, 0), C.at<double>(2, 1), C.at<double>(2, 2), scale*C.at<double>(2, 3), //
+		0.0, 0.0, 0.0, 1.0;
+
+		return Eigen::Affine3d(Tm).inverse();
+	}
+
+	double computeNormalizedFeatures(Features2D& oldFeatures,
+				Features2D& newFeatures, Features2Dn& oldFeaturesNorm,
+				Features2Dn& newFeaturesNorm);
+
+	cv::Vec2d computeNormalizedPoint(cv::Point2f& point);
+
+protected:
 	cv::Matx33d Kinv;
 	double Kscale;
 
-	bool started;
+	//Tracking status
+	State state;
 
+	//Pose data
+	Eigen::Affine3d T_WC;
 };
 
 class Backend2D: public Backend
 {
 public:
-	void computeTransformation(Features2D& trackedFeatures, Features2D& features) override;
+	virtual Eigen::Affine3d computePose(Features2D& trackedFeatures,
+				Features2D& features) override;
 
 private:
-	double computeNormalizedFeatures(Features2D& oldFeatures,
-				Features2D& newFeatures, Features2Dn& oldFeaturesNorm,
-				Features2Dn& newFeaturesNorm);
+	Eigen::Affine3d computeTransform(Features2Dn featuresOldnorm,
+				Features2Dn featuresNewnorm);
 
-	cv::Mat recoverCameraFromEssential(Features2Dn& oldFeaturesNorm, Features2Dn& newFeaturesNorm,
-				std::vector<unsigned char>& mask);
+	cv::Mat recoverCameraFromEssential(Features2Dn& oldFeaturesNorm,
+				Features2Dn& newFeaturesNorm, std::vector<unsigned char>& mask);
 
 	Features3Dn triangulatePoints(Features2Dn& oldFeaturesNorm,
-				Features2Dn& newFeaturesNorm, cv::Mat C, std::vector<unsigned char>& mask);
-
-	cv::Vec2d computeNormalizedPoint(cv::Point2f& point);
+				Features2Dn& newFeaturesNorm, cv::Mat C,
+				std::vector<unsigned char>& mask);
 
 	double estimateScale(Features3Dn& new3DPoints);
 
@@ -115,9 +143,11 @@ private:
 	double estimateScaleMean(std::vector<double>& scaleVector);
 
 private:
+	//Features data
 	Features2D oldFeatures;
 	Features3Dn old3DPoints;
 
+	//publisher TODO not here!
 	FeaturesPublisher publisher;
 
 };

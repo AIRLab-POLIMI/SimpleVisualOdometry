@@ -52,79 +52,27 @@ inline std::ostream& operator<<(std::ostream& os,
 
 Backend::Backend()
 {
-	computed = false;
 	Kscale = 0;
-	started = false;
+	state = Initial;
 }
 
-void Backend2D::computeTransformation(Features2D& trackedFeatures,
-			Features2D& features)
+cv::Vec2d Backend::computeNormalizedPoint(cv::Point2f& point)
 {
-	if (oldFeatures.size() == 0)
-	{
-		oldFeatures = features;
-	}
-	else
-	{
-		static int debug1 = 0;
-		static int debug2 = 0;
+	cv::Vec3d hpt;
+	hpt[0] = point.x;
+	hpt[1] = point.y;
+	hpt[2] = 1;
 
-		Features2Dn featuresOldnorm;
-		Features2Dn featuresNewnorm;
+	hpt = Kinv * hpt;
 
-		double deltaMean = computeNormalizedFeatures(oldFeatures,
-					trackedFeatures, featuresOldnorm, featuresNewnorm);
+	cv::Vec2d pt;
+	pt[0] = hpt[0];
+	pt[1] = hpt[1];
 
-		if (sufficientDelta(deltaMean))
-		{
-			try
-			{
-				vector<unsigned char> mask;
-				Mat C = recoverCameraFromEssential(featuresOldnorm,
-							featuresNewnorm, mask);
-
-				Features3Dn&& triangulated = triangulatePoints(featuresOldnorm,
-							featuresNewnorm, C, mask);
-
-				double scale = 1.0;
-
-				if (old3DPoints.size() != 0)
-				{
-					scale = estimateScale(triangulated);
-				}
-
-				t = Mat(scale * C.col(3));
-				R = C(Rect(0, 0, 3, 3));
-
-				/*std::cout << "scale: " << scale << " t scaled: " << t.t()
-							<< std::endl;*/
-
-				computed = true;
-
-				old3DPoints = triangulated;
-				old3DPoints.scalePoints(scale);
-
-				publisher.publishFeatureMarkers(old3DPoints);
-				oldFeatures = features;
-			}
-			catch (low_parallax_exception& e)
-			{
-				//std::cout << "low parallax" << std::endl;
-			}
-			catch (no_points_exception& e)
-			{
-				std::cout
-							<< "LOST!"
-							<< std::endl;
-				old3DPoints = Features3Dn();
-			}
-		}
-
-	}
-
+	return pt;
 }
 
-double Backend2D::computeNormalizedFeatures(Features2D& oldFeatures,
+double Backend::computeNormalizedFeatures(Features2D& oldFeatures,
 			Features2D& newFeatures, Features2Dn& oldFeaturesNorm,
 			Features2Dn& newFeaturesNorm)
 {
@@ -155,20 +103,84 @@ double Backend2D::computeNormalizedFeatures(Features2D& oldFeatures,
 	return deltaMean;
 }
 
-cv::Vec2d Backend2D::computeNormalizedPoint(cv::Point2f& point)
+Eigen::Affine3d Backend2D::computePose(Features2D& trackedFeatures, Features2D& features)
 {
-	cv::Vec3d hpt;
-	hpt[0] = point.x;
-	hpt[1] = point.y;
-	hpt[2] = 1;
+	Eigen::Affine3d T;
+	T.setIdentity();
 
-	hpt = Kinv * hpt;
+	if (oldFeatures.size() == 0)
+	{
+		oldFeatures = features;
+	}
+	else
+	{
+		static int debug1 = 0;
+		static int debug2 = 0;
 
-	cv::Vec2d pt;
-	pt[0] = hpt[0];
-	pt[1] = hpt[1];
+		Features2Dn featuresOldnorm;
+		Features2Dn featuresNewnorm;
 
-	return pt;
+		double deltaMean = computeNormalizedFeatures(oldFeatures,
+					trackedFeatures, featuresOldnorm, featuresNewnorm);
+
+		if (sufficientDelta(deltaMean))
+		{
+			Eigen::Vector3d t;
+			Eigen::Matrix3d R;
+
+			try
+			{
+				vector<unsigned char> mask;
+				Mat C = recoverCameraFromEssential(featuresOldnorm,
+							featuresNewnorm, mask);
+
+				Features3Dn&& triangulated = triangulatePoints(featuresOldnorm,
+							featuresNewnorm, C, mask);
+
+				double scale = 1.0;
+
+				if (state != Initializing)
+				{
+					scale = estimateScale(triangulated);
+				}
+
+				//Compute transform
+				T = cameraToTransform(C, scale);
+
+				//Compute new pose
+				T_WC = T_WC*T;
+
+				//Compute points
+				old3DPoints = triangulated;
+				old3DPoints.scalePoints(scale);
+
+				//compute Features
+				oldFeatures = features;
+
+				//Update state
+				state = Tracking;
+
+				//Publish features TODO remove
+				publisher.publishFeatureMarkers(old3DPoints);
+			}
+			catch (low_parallax_exception& e)
+			{
+
+			}
+			catch (no_points_exception& e)
+			{
+				std::cout << "LOST!" << std::endl;
+				old3DPoints = Features3Dn();
+
+				//Update state
+				state = Lost;
+			}
+		}
+
+	}
+
+	return T_WC;
+
 }
 
 Mat Backend2D::recoverCameraFromEssential(Features2Dn& oldFeaturesNorm,
@@ -188,7 +200,7 @@ Mat Backend2D::recoverCameraFromEssential(Features2Dn& oldFeaturesNorm,
 	int newInliers = recoverPose(E, points1, points2, R_e, t_e, mask);
 
 	/*std::cout << "points: " << points1.size() << " ransac inliers: " << inliers
-				<< " triang inliers: " << newInliers << std::endl;*/
+	 << " triang inliers: " << newInliers << std::endl;*/
 
 	if (newInliers < inliers / 2)
 		throw low_parallax_exception();

@@ -30,6 +30,7 @@
 #include <sensor_msgs/image_encodings.h>
 
 #include <tf2_ros/transform_broadcaster.h>
+#include <tf2_ros/transform_listener.h>
 
 #include <opencv2/opencv.hpp>
 #include <Eigen/Geometry>
@@ -65,23 +66,24 @@ private:
 	void publishEigenTransform(const ros::Time& stamp,
 				const std::string& parent, const std::string& frame_id,
 				const Eigen::Affine3d& T);
+	Eigen::Affine3d getEigenTransform(const ros::Time& stamp,
+				const std::string& parent, const std::string& frame_id);
 
 private:
 	//Ros management
 	image_transport::ImageTransport it;
 	image_transport::CameraSubscriber imageSubscriber;
 
-	ConfigManager config;
-
-	//Pose Tracking
+	//Tf
 	tf2_ros::TransformBroadcaster tfBroadcaster;
+	tf2_ros::Buffer tfBuffer;
+	tf2_ros::TransformListener tfListener;
+
+	//Path publishers
 	TrajectoryPublisher trajectoryPublisher;
+	TrajectoryPublisher gtTrajectoryPublisher;
 
-	Eigen::Affine3d T_CR;
-	Eigen::Affine3d T_RC;
-	Eigen::Affine3d T_WC;
-	Eigen::Affine3d Tgt;
-
+private:
 	//Visual Frontend
 	VisualFrontend frontend;
 
@@ -90,6 +92,15 @@ private:
 
 	//debug display
 	std::string src_window;
+
+	ConfigManager config;
+
+	//Pose
+	Eigen::Affine3d T_CR;
+	Eigen::Affine3d T_RC;
+	Eigen::Affine3d T_WC;
+	Eigen::Affine3d Tgt;
+
 };
 
 #endif /* EXTRACTOR_H_ */

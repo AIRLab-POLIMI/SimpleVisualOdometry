@@ -27,12 +27,15 @@
 
 #include <image_geometry/pinhole_camera_model.h>
 
+#include <tf2_eigen/tf2_eigen.h>
+
 namespace enc = sensor_msgs::image_encodings;
 using namespace cv;
 using namespace std;
 
 VisualOdometryLogic::VisualOdometryLogic(string imageTopic, ros::NodeHandle& n) :
-			it(n), trajectoryPublisher("camera")
+			it(n), trajectoryPublisher("camera"), gtTrajectoryPublisher("gt"),
+			tfListener(tfBuffer)
 {
 	imageSubscriber = it.subscribeCamera(imageTopic + "image_rect_color", 1,
 				&VisualOdometryLogic::handleImage, this);
@@ -57,6 +60,7 @@ VisualOdometryLogic::VisualOdometryLogic(string imageTopic, ros::NodeHandle& n) 
 
 	//Init Backend
 	backend = new Backend2D();
+	backend->setCameraPose(T_WC);
 
 }
 
@@ -130,46 +134,34 @@ void VisualOdometryLogic::trackPose(
 	image_geometry::PinholeCameraModel cameraModel;
 	cameraModel.fromCameraInfo(info_msg);
 
-	//Compute Camera translation
+	//Compute Camera Pose
 	Matx34d P = cameraModel.fullProjectionMatrix();
 	Matx33d K = P.get_minor<3, 3>(0, 0);
 	backend->setK(K);
-	backend->computeTransformation(trackedFeatures,
-				frontend.getCurrentFeatures());
-
-	if (backend->transformationComputed())
-	{
-		Matx33d R = backend->getRotation();
-		Vec3d t = backend->getTranslation();
-
-		//Compute new camera pose
-		Eigen::Vector3d t_eigen(t[0], t[1], t[2]);
-
-		Eigen::Matrix3d R_eigen;
-		R_eigen << R(0, 0), R(0, 1), R(0, 2), //
-		R(1, 0), R(1, 1), R(1, 2), //
-		R(2, 0), R(2, 1), R(2, 2);
-
-		Eigen::Affine3d T_new;
-		T_new.setIdentity();
-		T_new.translate(t_eigen);
-		T_new.rotate(R_eigen);
-
-		//std::cout << t << std::endl;
-		//std::cout << R << std::endl;
-
-		T_WC = T_WC * T_new.inverse();
-
-	}
+	T_WC = backend->computePose(trackedFeatures, frontend.getCurrentFeatures());
 
 	Eigen::Affine3d T_WR = T_WC * T_CR;
 
 	//Send Transform
-	publishEigenTransform(info_msg->header.stamp, "world", info_msg->header.frame_id, T_WR);
-	publishEigenTransform(info_msg->header.stamp, info_msg->header.frame_id, "camera_link", T_RC);
+	publishEigenTransform(info_msg->header.stamp, "world",
+				info_msg->header.frame_id, T_WR);
+	publishEigenTransform(info_msg->header.stamp, info_msg->header.frame_id,
+				"camera_link", T_RC);
 
 	//Send trajectory
 	trajectoryPublisher.publishPath(T_WR, info_msg->header.stamp);
+
+	//publish gt trajectory
+	try
+	{
+		Tgt = getEigenTransform(info_msg->header.stamp, "world",
+					"prosilica/camera_link_gt");
+		gtTrajectoryPublisher.publishPath(Tgt, info_msg->header.stamp);
+	}
+	catch (tf2::TransformException &ex)
+	{
+
+	}
 }
 
 void VisualOdometryLogic::publishEigenTransform(const ros::Time& stamp,
@@ -193,6 +185,15 @@ void VisualOdometryLogic::publishEigenTransform(const ros::Time& stamp,
 	transformStamped.transform.rotation.w = q.w();
 
 	tfBroadcaster.sendTransform(transformStamped);
+}
+
+Eigen::Affine3d VisualOdometryLogic::getEigenTransform(const ros::Time& stamp,
+			const std::string& parent, const std::string& frame_id)
+{
+	geometry_msgs::TransformStamped transformStamped;
+	transformStamped = tfBuffer.lookupTransform(parent, frame_id, stamp);
+
+	return tf2::transformToEigen(transformStamped);
 }
 
 void VisualOdometryLogic::drawFeatures(Mat& frame, Features2D& features,
