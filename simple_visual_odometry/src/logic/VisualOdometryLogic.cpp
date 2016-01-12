@@ -140,9 +140,12 @@ void VisualOdometryLogic::trackPose(
 	Matx34d P = cameraModel.fullProjectionMatrix();
 	Matx33d K = P.get_minor<3, 3>(0, 0);
 	backend->setK(K);
-	T_WC = backend->computePose(trackedFeatures, frontend.getCurrentFeatures());
+	T_WC = backend->computePose(trackedFeatures);
 
 	Eigen::Affine3d T_WR = T_WC * T_CR;
+
+	//Publish features
+	featurespublisher.publishFeatureMarkers(backend->getFeatures());
 
 	//Send Transform
 	publishEigenTransform(info_msg->header.stamp, "world",

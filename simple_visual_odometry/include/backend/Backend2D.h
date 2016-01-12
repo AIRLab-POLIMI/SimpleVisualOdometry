@@ -29,8 +29,7 @@
 class Backend2D: public Backend
 {
 public:
-	virtual Eigen::Affine3d computePose(Features2D& trackedFeatures,
-				Features2D& features) override;
+	virtual Eigen::Affine3d computePose(Features2D& features) override;
 
 	virtual Features3Dn getFeatures() const override
 	{
@@ -57,6 +56,11 @@ private:
 	//Features data
 	Features2D oldFeatures;
 	Features3Dn old3DPoints;
+
+private:
+	static const unsigned int minInitialFeatures = 100;
+	static const unsigned int minFeatures = 10;
+
 };
 
 

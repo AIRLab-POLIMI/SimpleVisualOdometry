@@ -26,34 +26,37 @@
 using namespace std;
 using namespace cv;
 
-
-Eigen::Affine3d Backend2D::computePose(Features2D& trackedFeatures,
-			Features2D& features)
+Eigen::Affine3d Backend2D::computePose(Features2D& features)
 {
-	Eigen::Affine3d T;
-	T.setIdentity();
-
-	if (oldFeatures.size() == 0)
+	try
 	{
-		oldFeatures = features;
-	}
-	else
-	{
-		static int debug1 = 0;
-		static int debug2 = 0;
 
-		Features2Dn featuresOldnorm;
-		Features2Dn featuresNewnorm;
-
-		double deltaMean = computeNormalizedFeatures(oldFeatures,
-					trackedFeatures, featuresOldnorm, featuresNewnorm);
-
-		if (sufficientDelta(deltaMean))
+		if (state == Initial || state == Lost)
 		{
-			Eigen::Vector3d t;
-			Eigen::Matrix3d R;
+			if (features.size() > minInitialFeatures)
+			{
+				//Accept first features
+				oldFeatures = features;
 
-			try
+				//Update state
+				state = Initializing;
+			}
+		}
+		else
+		{
+			if(features.size() < minFeatures)
+					throw Backend::no_points_exception();
+
+			Features2Dn featuresOldnorm;
+			Features2Dn featuresNewnorm;
+
+			double deltaMean = computeNormalizedFeatures(oldFeatures,
+						features, featuresOldnorm, featuresNewnorm);
+
+			if(featuresOldnorm.size() < minFeatures)
+				throw Backend::no_points_exception();
+
+			if (sufficientDelta(deltaMean))
 			{
 				vector<unsigned char> mask;
 				Mat C = recoverCameraFromEssential(featuresOldnorm,
@@ -70,7 +73,7 @@ Eigen::Affine3d Backend2D::computePose(Features2D& trackedFeatures,
 				}
 
 				//Compute transform
-				T = cameraToTransform(C, scale);
+				Eigen::Affine3d T = cameraToTransform(C, scale);
 
 				//Compute new pose
 				T_WC = T_WC * T;
@@ -85,20 +88,19 @@ Eigen::Affine3d Backend2D::computePose(Features2D& trackedFeatures,
 				//Update state
 				state = Tracking;
 			}
-			catch (Backend::low_parallax_exception& e)
-			{
-
-			}
-			catch (Backend::no_points_exception& e)
-			{
-				std::cout << "LOST!" << std::endl;
-				old3DPoints = Features3Dn();
-
-				//Update state
-				state = Lost;
-			}
 		}
+	}
+	catch (Backend::low_parallax_exception& e)
+	{
 
+	}
+	catch (Backend::no_points_exception& e)
+	{
+		std::cout << "LOST!" << std::endl;
+		old3DPoints = Features3Dn();
+
+		//Update state
+		state = Lost;
 	}
 
 	return T_WC;

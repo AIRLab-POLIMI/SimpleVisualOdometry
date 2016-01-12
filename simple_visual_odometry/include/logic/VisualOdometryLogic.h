@@ -40,6 +40,7 @@
 #include "frontend/VisualFrontend.h"
 #include "backend/Backend.h"
 
+#include "publishers/FeaturesPublisher.h"
 #include "publishers/TrajectoryPublisher.h"
 
 class VisualOdometryLogic
@@ -79,9 +80,6 @@ private:
 	tf2_ros::Buffer tfBuffer;
 	tf2_ros::TransformListener tfListener;
 
-	//Path publishers
-	TrajectoryPublisher trajectoryPublisher;
-	TrajectoryPublisher gtTrajectoryPublisher;
 
 private:
 	//Visual Frontend
@@ -90,9 +88,7 @@ private:
 	//Localization Backend
 	Backend* backend;
 
-	//debug display
-	std::string src_window;
-
+	//config
 	ConfigManager config;
 
 	//Pose
@@ -100,6 +96,16 @@ private:
 	Eigen::Affine3d T_RC;
 	Eigen::Affine3d T_WC;
 	Eigen::Affine3d Tgt;
+
+private:
+	//Publishers
+	TrajectoryPublisher trajectoryPublisher;
+	TrajectoryPublisher gtTrajectoryPublisher;
+	FeaturesPublisher featurespublisher;
+
+	//debug display
+	std::string src_window;
+
 
 };
 

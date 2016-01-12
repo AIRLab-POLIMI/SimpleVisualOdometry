@@ -31,7 +31,7 @@ class FeaturesPublisher
 {
 public:
 	FeaturesPublisher();
-	void publishFeatureMarkers(Features3Dn& features);
+	void publishFeatureMarkers(const Features3Dn& features);
 
 private:
 	ros::Publisher markers_pub;

@@ -33,7 +33,7 @@ FeaturesPublisher::FeaturesPublisher()
 
 }
 
-void FeaturesPublisher::publishFeatureMarkers(Features3Dn& features)
+void FeaturesPublisher::publishFeatureMarkers(const Features3Dn& features)
 {
   static unsigned int id = 0;
   visualization_msgs::Marker msg;

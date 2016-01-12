@@ -55,10 +55,9 @@ public:
 		this->T_WC = T_WC;
 	}
 
-	virtual Eigen::Affine3d computePose(Features2D& trackedFeatures,
-				Features2D& features) = 0;
+	virtual Eigen::Affine3d computePose(Features2D& trackedFeatures) = 0;
 
-	virtual Features3Dn getFeatures() const  = 0;
+	virtual Features3Dn getFeatures() const = 0;
 
 	inline void setK(const cv::Matx33d& K)
 	{
@@ -85,15 +84,7 @@ protected:
 		{
 			case Initial:
 			case Lost:
-				if (deltaFeatures > 20.0)
-				{
-					state = Initializing;
-					return true;
-				}
-				else
-				{
-					return false;
-				}
+				return deltaFeatures > 20.0;
 
 			default:
 				return deltaFeatures > 1.0;
@@ -105,9 +96,12 @@ protected:
 	{
 		Eigen::Matrix4d Tm;
 		Tm << //
-		C.at<double>(0, 0), C.at<double>(0, 1), C.at<double>(0, 2), scale*C.at<double>(0, 3), //
-		C.at<double>(1, 0), C.at<double>(1, 1), C.at<double>(1, 2), scale*C.at<double>(1, 3), //
-		C.at<double>(2, 0), C.at<double>(2, 1), C.at<double>(2, 2), scale*C.at<double>(2, 3), //
+					C.at<double>(0, 0), C.at<double>(0, 1), C.at<double>(0, 2), scale
+					* C.at<double>(0, 3), //
+		C.at<double>(1, 0), C.at<double>(1, 1), C.at<double>(1, 2), scale
+					* C.at<double>(1, 3), //
+		C.at<double>(2, 0), C.at<double>(2, 1), C.at<double>(2, 2), scale
+					* C.at<double>(2, 3), //
 		0.0, 0.0, 0.0, 1.0;
 
 		return Eigen::Affine3d(Tm).inverse();

@@ -67,6 +67,11 @@ public:
 		return points[i];
 	}
 
+	const Type& operator[](unsigned int i) const
+	{
+		return points[i];
+	}
+
 	typename std::vector<Type>::iterator begin()
 	{
 		return points.begin();
@@ -82,7 +87,7 @@ public:
 		return points;
 	}
 
-	inline unsigned int getId(unsigned int index)
+	inline unsigned int getId(unsigned int index) const
 	{
 		return ids[index];
 	}
@@ -94,12 +99,12 @@ public:
 		return indexes[id];
 	}
 
-	inline size_t size()
+	inline size_t size() const
 	{
 		return points.size();
 	}
 
-	inline bool contains(unsigned int id)
+	inline bool contains(unsigned int id) const
 	{
 		assert(ids.size() == points.size() && points.size() == indexes.size());
 		return indexes.count(id) != 0;
