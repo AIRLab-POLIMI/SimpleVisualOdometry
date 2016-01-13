@@ -31,22 +31,9 @@ class Backend2D: public Backend
 public:
 	virtual Eigen::Affine3d computePose(Features2D& features) override;
 
-	virtual Features3Dn getFeatures() const override
-	{
-		return old3DPoints;
-	}
+	virtual Features3Dn getFeatures() const override;
 
 private:
-	Eigen::Affine3d computeTransform(Features2Dn featuresOldnorm,
-				Features2Dn featuresNewnorm);
-
-	cv::Mat recoverCameraFromEssential(Features2Dn& oldFeaturesNorm,
-				Features2Dn& newFeaturesNorm, std::vector<unsigned char>& mask);
-
-	Features3Dn triangulatePoints(Features2Dn& oldFeaturesNorm,
-				Features2Dn& newFeaturesNorm, cv::Mat C,
-				std::vector<unsigned char>& mask);
-
 	double estimateScale(Features3Dn& new3DPoints);
 
 	double estimateScaleMedian(std::vector<double>& scaleVector);

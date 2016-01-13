@@ -28,67 +28,83 @@ using namespace cv;
 
 Eigen::Affine3d Backend2D::computePose(Features2D& features)
 {
+	//Points frame is last frame
+	Fpoints = T_WC;
+
 	try
 	{
 
-		if (state == Initial || state == Lost)
+		switch (state)
 		{
-			if (features.size() > minInitialFeatures)
+			case Initial:
+			case Lost:
 			{
-				//Accept first features
-				oldFeatures = features;
+				if (features.size() > minInitialFeatures)
+				{
+					//Accept first features
+					oldFeatures = features;
 
-				//Update state
-				state = Initializing;
+					//Update state
+					state = Initializing;
+				}
+				break;
 			}
-		}
-		else
-		{
-			if(features.size() < minFeatures)
+
+			case Initializing:
+			case Tracking:
+			{
+				if (features.size() < minFeatures)
 					throw Backend::no_points_exception();
 
-			Features2Dn featuresOldnorm;
-			Features2Dn featuresNewnorm;
+				Features2Dn featuresOldnorm;
+				Features2Dn featuresNewnorm;
 
-			double deltaMean = computeNormalizedFeatures(oldFeatures,
-						features, featuresOldnorm, featuresNewnorm);
+				double deltaMean = computeNormalizedFeatures(oldFeatures,
+							features, featuresOldnorm, featuresNewnorm);
 
-			if(featuresOldnorm.size() < minFeatures)
-				throw Backend::no_points_exception();
+				if (featuresOldnorm.size() < minFeatures)
+					throw Backend::no_points_exception();
 
-			if (sufficientDelta(deltaMean))
-			{
-				vector<unsigned char> mask;
-				Mat C = recoverCameraFromEssential(featuresOldnorm,
-							featuresNewnorm, mask);
-
-				Features3Dn&& triangulated = triangulatePoints(featuresOldnorm,
-							featuresNewnorm, C, mask);
-
-				double scale = 1.0;
-
-				if (state != Initializing)
+				if (sufficientDelta(deltaMean))
 				{
-					scale = estimateScale(triangulated);
+					vector<unsigned char> mask;
+					Mat C = recoverCameraFromEssential(featuresOldnorm,
+								featuresNewnorm, mask);
+
+					Features3Dn&& triangulated = triangulate(featuresOldnorm,
+								featuresNewnorm, mask, C);
+
+					double scale = 1.0;
+
+					if (state != Initializing)
+					{
+						scale = estimateScale(triangulated);
+					}
+
+					//Compute transform
+					Eigen::Affine3d T = cameraToTransform(C, scale);
+
+					//Compute new pose
+					T_WC = T_WC * T;
+
+					//Compute points
+					old3DPoints = triangulated;
+					old3DPoints.scalePoints(scale);
+
+					//compute Features
+					oldFeatures = features;
+
+					//Update state
+					state = Tracking;
 				}
 
-				//Compute transform
-				Eigen::Affine3d T = cameraToTransform(C, scale);
-
-				//Compute new pose
-				T_WC = T_WC * T;
-
-				//Compute points
-				old3DPoints = triangulated;
-				old3DPoints.scalePoints(scale);
-
-				//compute Features
-				oldFeatures = features;
-
-				//Update state
-				state = Tracking;
+				break;
 			}
+
+			default:
+				break;
 		}
+
 	}
 	catch (Backend::low_parallax_exception& e)
 	{
@@ -107,60 +123,9 @@ Eigen::Affine3d Backend2D::computePose(Features2D& features)
 
 }
 
-Mat Backend2D::recoverCameraFromEssential(Features2Dn& oldFeaturesNorm,
-			Features2Dn& newFeaturesNorm, vector<unsigned char>& mask)
+Features3Dn Backend2D::getFeatures() const
 {
-	vector<Vec2d> points1 = oldFeaturesNorm.getPoints();
-	vector<Vec2d> points2 = newFeaturesNorm.getPoints();
-
-	Mat E = findEssentialMat(points1, points2, 1.0, cv::Point2d(0, 0),
-				FM_RANSAC, 0.99, 0.5 / Kscale, mask);
-
-	Mat R_e;
-	Mat t_e;
-
-	int inliers = countNonZero(mask);
-
-	int newInliers = recoverPose(E, points1, points2, R_e, t_e, mask);
-
-	/*std::cout << "points: " << points1.size() << " ransac inliers: " << inliers
-	 << " triang inliers: " << newInliers << std::endl;*/
-
-	if (newInliers < inliers / 2)
-		throw Backend::low_parallax_exception();
-
-	Mat C;
-	hconcat(R_e, t_e, C);
-
-	return C;
-
-}
-
-Features3Dn Backend2D::triangulatePoints(Features2Dn& oldFeaturesNorm,
-			Features2Dn& newFeaturesNorm, cv::Mat C,
-			vector<unsigned char>& mask)
-{
-	Features3Dn triangulated;
-
-	cv::Mat C0 = cv::Mat::eye(3, 4, CV_64FC1);
-
-	cv::Mat points4D(1, oldFeaturesNorm.size(), CV_64FC4);
-	cv::triangulatePoints(C0, C, oldFeaturesNorm.getPoints(),
-				newFeaturesNorm.getPoints(), points4D);
-
-	for (unsigned int i = 0; i < points4D.cols; i++)
-	{
-		if (mask[i])
-		{
-			Vec4d point4d = points4D.col(i);
-			point4d = point4d / point4d[3];
-			Vec3d point(point4d[0], point4d[1], point4d[2]);
-			triangulated.addPoint(point, oldFeaturesNorm.getId(i));
-		}
-	}
-
-	return triangulated;
-
+	return old3DPoints;
 }
 
 double Backend2D::estimateScale(Features3Dn& new3DPoints)
@@ -202,8 +167,6 @@ double Backend2D::estimateScale(Features3Dn& new3DPoints)
 	}
 
 	int N = scaleVector.size();
-
-	//std::cout << "N: " << N << std::endl;
 
 	if (N == 0)
 		throw Backend::low_parallax_exception();

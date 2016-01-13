@@ -50,14 +50,13 @@ public:
 public:
 	Backend();
 
+	virtual Eigen::Affine3d computePose(Features2D& trackedFeatures) = 0;
+	virtual Features3Dn getFeatures() const = 0;
+
 	inline void setCameraPose(Eigen::Affine3d& T_WC)
 	{
 		this->T_WC = T_WC;
 	}
-
-	virtual Eigen::Affine3d computePose(Features2D& trackedFeatures) = 0;
-
-	virtual Features3Dn getFeatures() const = 0;
 
 	inline void setK(const cv::Matx33d& K)
 	{
@@ -67,9 +66,14 @@ public:
 		Kscale = (fx + fy) / 2;
 	}
 
-	State getState() const
+	inline State getState() const
 	{
 		return state;
+	}
+
+	inline Eigen::Affine3d getPointsFrame() const
+	{
+		return Fpoints;
 	}
 
 	virtual ~Backend()
@@ -78,40 +82,22 @@ public:
 	}
 
 protected:
-	inline bool sufficientDelta(double deltaFeatures)
-	{
-		switch (state)
-		{
-			case Initial:
-			case Lost:
-				return deltaFeatures > 20.0;
+	bool sufficientDelta(double deltaFeatures);
 
-			default:
-				return deltaFeatures > 1.0;
-		}
-	}
-
-	inline Eigen::Affine3d cameraToTransform(const cv::Mat& C, double scale =
-				1.0)
-	{
-		Eigen::Matrix4d Tm;
-		Tm << //
-					C.at<double>(0, 0), C.at<double>(0, 1), C.at<double>(0, 2), scale
-					* C.at<double>(0, 3), //
-		C.at<double>(1, 0), C.at<double>(1, 1), C.at<double>(1, 2), scale
-					* C.at<double>(1, 3), //
-		C.at<double>(2, 0), C.at<double>(2, 1), C.at<double>(2, 2), scale
-					* C.at<double>(2, 3), //
-		0.0, 0.0, 0.0, 1.0;
-
-		return Eigen::Affine3d(Tm).inverse();
-	}
+	Eigen::Affine3d cameraToTransform(const cv::Mat& C, double scale = 1.0);
 
 	double computeNormalizedFeatures(Features2D& oldFeatures,
 				Features2D& newFeatures, Features2Dn& oldFeaturesNorm,
 				Features2Dn& newFeaturesNorm);
 
 	cv::Vec2d computeNormalizedPoint(cv::Point2f& point);
+
+	Features3Dn triangulate(Features2Dn& oldFeaturesNorm,
+				Features2Dn& newFeaturesNorm, std::vector<unsigned char>& mask,
+				cv::Mat C, cv::Mat C0 = cv::Mat::eye(3, 4, CV_64FC1));
+
+	cv::Mat recoverCameraFromEssential(Features2Dn& oldFeaturesNorm,
+					Features2Dn& newFeaturesNorm, std::vector<unsigned char>& mask);
 
 protected:
 	cv::Matx33d Kinv;
@@ -122,6 +108,9 @@ protected:
 
 	//Pose data
 	Eigen::Affine3d T_WC;
+
+	//Points reference Frame
+	Eigen::Affine3d Fpoints;
 };
 
 #endif /* INCLUDE_BACKEND_H_ */

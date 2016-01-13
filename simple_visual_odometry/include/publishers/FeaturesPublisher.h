@@ -26,12 +26,13 @@
 
 #include <ros/ros.h>
 #include "core/Features.h"
+#include <Eigen/Geometry>
 
 class FeaturesPublisher
 {
 public:
 	FeaturesPublisher();
-	void publishFeatureMarkers(const Features3Dn& features);
+	void publishFeatureMarkers(const Features3Dn& features, const Eigen::Affine3d& F);
 
 private:
 	ros::Publisher markers_pub;

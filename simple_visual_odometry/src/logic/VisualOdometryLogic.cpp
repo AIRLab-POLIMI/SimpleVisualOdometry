@@ -145,7 +145,7 @@ void VisualOdometryLogic::trackPose(
 	Eigen::Affine3d T_WR = T_WC * T_CR;
 
 	//Publish features
-	featurespublisher.publishFeatureMarkers(backend->getFeatures());
+	featurespublisher.publishFeatureMarkers(backend->getFeatures(), backend->getPointsFrame());
 
 	//Send Transform
 	publishEigenTransform(info_msg->header.stamp, "world",

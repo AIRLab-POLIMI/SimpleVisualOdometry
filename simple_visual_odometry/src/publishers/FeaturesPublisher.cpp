@@ -33,13 +33,13 @@ FeaturesPublisher::FeaturesPublisher()
 
 }
 
-void FeaturesPublisher::publishFeatureMarkers(const Features3Dn& features)
+void FeaturesPublisher::publishFeatureMarkers(const Features3Dn& features, const Eigen::Affine3d& F)
 {
   static unsigned int id = 0;
   visualization_msgs::Marker msg;
 
   msg.header.stamp = ros::Time::now();
-  msg.header.frame_id = "/camera_link";
+  msg.header.frame_id = "world";
   msg.type = visualization_msgs::Marker::CUBE_LIST;
   msg.frame_locked = false;
   msg.ns = "vo";
@@ -55,14 +55,15 @@ void FeaturesPublisher::publishFeatureMarkers(const Features3Dn& features)
   msg.scale.y = 0.1;
   msg.scale.z = 0.1;
 
-  msg.pose.position.x = 0.0;
-  msg.pose.position.y = 0.0;
-  msg.pose.position.z = 0.0;
+  msg.pose.position.x = F.translation().x();
+  msg.pose.position.y = F.translation().y();
+  msg.pose.position.z = F.translation().z();
 
-  msg.pose.orientation.x = 0;
-  msg.pose.orientation.y = 0;
-  msg.pose.orientation.z = 0;
-  msg.pose.orientation.w = 1;
+  Eigen::Quaterniond q(F.rotation());
+  msg.pose.orientation.x = q.x();
+  msg.pose.orientation.y = q.y();
+  msg.pose.orientation.z = q.z();
+  msg.pose.orientation.w = q.w();
 
   msg.points.resize(features.size());
 
