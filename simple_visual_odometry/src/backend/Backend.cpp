@@ -113,18 +113,18 @@ Mat Backend::recoverCameraFromEssential(Features2Dn& oldFeaturesNorm,
 	Mat E = findEssentialMat(points1, points2, 1.0, Point2d(0, 0), FM_RANSAC,
 				0.99, 0.5 / Kscale, mask);
 
-	Mat R_e;
-	Mat t_e;
+	Mat R;
+	Mat t;
 
 	int inliers = countNonZero(mask);
 
-	int newInliers = recoverPose(E, points1, points2, R_e, t_e, mask);
+	int newInliers = recoverPose(E, points1, points2, R, t, mask);
 
 	if (newInliers < inliers / 2)
 		throw Backend::low_parallax_exception();
 
 	Mat C;
-	hconcat(R_e, t_e, C);
+	hconcat(R, t, C);
 
 	return C;
 

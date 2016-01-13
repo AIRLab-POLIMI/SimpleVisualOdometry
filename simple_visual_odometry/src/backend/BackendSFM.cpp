@@ -28,7 +28,8 @@ BackendSFM::BackendSFM(const Eigen::Affine3d& F)
 	Fpoints = F;
 }
 
-Eigen::Affine3d BackendSFM::computePose(Features2D& trackedFeatures, Features2D& newFeatures)
+Eigen::Affine3d BackendSFM::computePose(Features2D& trackedFeatures,
+			Features2D& newFeatures)
 {
 	try
 	{
@@ -37,7 +38,8 @@ Eigen::Affine3d BackendSFM::computePose(Features2D& trackedFeatures, Features2D&
 			case Initial:
 			case Lost:
 			{
-				if (newFeatures.size() + trackedFeatures.size() > minInitialFeatures)
+				if (newFeatures.size() + trackedFeatures.size()
+							> minInitialFeatures)
 				{
 					//Accept first features
 					oldFeatures = trackedFeatures;
@@ -70,8 +72,8 @@ Eigen::Affine3d BackendSFM::computePose(Features2D& trackedFeatures, Features2D&
 					Mat C = recoverCameraFromEssential(featuresOldnorm,
 								featuresNewnorm, mask);
 
-					Features3Dn&& triangulated = triangulate(
-								featuresOldnorm, featuresNewnorm, mask, C);
+					Features3Dn&& triangulated = triangulate(featuresOldnorm,
+								featuresNewnorm, mask, C);
 
 					//Save points
 					old3DPoints = triangulated;
@@ -91,7 +93,8 @@ Eigen::Affine3d BackendSFM::computePose(Features2D& trackedFeatures, Features2D&
 
 			case Tracking:
 			{
-
+				//Compute motion
+				//solvePnPRansac(old3DPoints.getPoints(), trackedFeatures.getPoints(), K, NULL, )
 
 				break;
 			}
@@ -116,4 +119,44 @@ Eigen::Affine3d BackendSFM::computePose(Features2D& trackedFeatures, Features2D&
 Features3Dn BackendSFM::getFeatures() const
 {
 	return new3DPoints;
+}
+
+void BackendSFM::computeMotion(Features2D& trackedFeatures)
+{
+
+}
+
+cv::Mat rodriguesFromPose(const Eigen::Affine3d& T)
+{
+	Eigen::Matrix3d R = T.rotation();
+	Mat Rcv = (Mat_<double>(3, 3) <<  //
+				R(0, 0), R(0, 1), R(0, 2), //
+	R(1, 0), R(1, 1), R(1, 2), //
+	R(2, 0), R(2, 1), R(2, 2));
+
+	Mat rvec;
+	Rodrigues(Rcv, rvec);
+
+	return rvec;
+}
+
+cv::Mat translationFromPose(const Eigen::Affine3d& T)
+{
+	Mat_<double> t(3, 1);
+
+	t(0, 0) = T.translation().x();
+	t(1, 0) = T.translation().y();
+	t(2, 0) = T.translation().z();
+}
+
+cv::Mat computeCameraMatrix(const cv::Mat& rvec, const cv::Mat& t)
+{
+	Mat R;
+	Rodrigues(rvec, R);
+
+	Mat C;
+	hconcat(R, t, C);
+
+	return C;
+
 }

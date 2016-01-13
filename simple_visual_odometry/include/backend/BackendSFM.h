@@ -34,6 +34,11 @@ public:
 	virtual Features3Dn getFeatures() const override;
 
 private:
+	void computeMotion(Features2D& trackedFeatures);
+
+	cv::Mat rodriguesFromPose(const Eigen::Affine3d& T);
+	cv::Mat translationFromPose(const Eigen::Affine3d& T);
+	cv::Mat computeCameraMatrix(const cv::Mat& rodrigues, const cv::Mat& t);
 
 private:
 	//Features data
