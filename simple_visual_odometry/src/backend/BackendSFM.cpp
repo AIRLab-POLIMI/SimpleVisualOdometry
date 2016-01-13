@@ -28,7 +28,7 @@ BackendSFM::BackendSFM(const Eigen::Affine3d& F)
 	Fpoints = F;
 }
 
-Eigen::Affine3d BackendSFM::computePose(Features2D& features)
+Eigen::Affine3d BackendSFM::computePose(Features2D& trackedFeatures, Features2D& newFeatures)
 {
 	try
 	{
@@ -37,10 +37,11 @@ Eigen::Affine3d BackendSFM::computePose(Features2D& features)
 			case Initial:
 			case Lost:
 			{
-				if (features.size() > minInitialFeatures)
+				if (newFeatures.size() + trackedFeatures.size() > minInitialFeatures)
 				{
 					//Accept first features
-					oldFeatures = features;
+					oldFeatures = trackedFeatures;
+					oldFeatures.addPoints(newFeatures);
 
 					//Update state
 					state = Initializing;
@@ -51,14 +52,14 @@ Eigen::Affine3d BackendSFM::computePose(Features2D& features)
 
 			case Initializing:
 			{
-				if (features.size() < minFeatures)
+				if (trackedFeatures.size() < minFeatures)
 					throw Backend::no_points_exception();
 
 				Features2Dn featuresOldnorm;
 				Features2Dn featuresNewnorm;
 
 				double deltaMean = computeNormalizedFeatures(oldFeatures,
-							features, featuresOldnorm, featuresNewnorm);
+							trackedFeatures, featuresOldnorm, featuresNewnorm);
 
 				if (featuresOldnorm.size() < minFeatures)
 					throw Backend::no_points_exception();

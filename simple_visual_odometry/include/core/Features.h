@@ -35,14 +35,13 @@ public:
 
 	}
 
-	Features(Features<Type>& oldFeatures,
-			std::vector<Type> newPoints,
-			std::vector<unsigned char> status)
+	Features(Features<Type>& oldFeatures, std::vector<Type> newPoints,
+				std::vector<unsigned char> status)
 	{
 		unsigned int j = 0;
-		for(unsigned int i = 0; i < oldFeatures.size(); i++)
+		for (unsigned int i = 0; i < oldFeatures.size(); i++)
 		{
-			if(status[i])
+			if (status[i])
 			{
 				unsigned int id_j = oldFeatures.getId(i);
 				ids.push_back(id_j);
@@ -60,6 +59,14 @@ public:
 		points.push_back(point);
 		ids.push_back(id);
 		indexes[id] = index;
+	}
+
+	void addPoints(Features<Type>& features)
+	{
+		for (unsigned int i = 0; i < features.size(); i++)
+		{
+			addPoint(features[i], features.getId(i));
+		}
 	}
 
 	Type& operator[](unsigned int i)
@@ -94,7 +101,7 @@ public:
 
 	inline unsigned int getIndex(unsigned int id)
 	{
-		if(indexes.count(id) == 0)
+		if (indexes.count(id) == 0)
 			throw std::runtime_error("no index");
 		return indexes[id];
 	}
@@ -112,7 +119,7 @@ public:
 
 	void scalePoints(double scale)
 	{
-		for(auto& p : points)
+		for (auto& p : points)
 			p *= scale;
 	}
 
@@ -128,6 +135,5 @@ typedef Features<cv::Point3f> Features3D;
 
 typedef Features<cv::Vec2d> Features2Dn;
 typedef Features<cv::Vec3d> Features3Dn;
-
 
 #endif /* INCLUDE_FEATURES_H_ */

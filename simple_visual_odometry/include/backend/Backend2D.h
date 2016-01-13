@@ -29,7 +29,7 @@
 class Backend2D: public Backend
 {
 public:
-	virtual Eigen::Affine3d computePose(Features2D& features) override;
+	virtual Eigen::Affine3d computePose(Features2D& trackedFeatures, Features2D& newFeatures) override;
 
 	virtual Features3Dn getFeatures() const override;
 

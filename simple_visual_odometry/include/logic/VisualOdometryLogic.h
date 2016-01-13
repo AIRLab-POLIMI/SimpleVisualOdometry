@@ -58,7 +58,7 @@ public:
 protected:
 	void publishFeatures(const std::string& frame_id, ros::Time stamp);
 	void trackPose(const sensor_msgs::CameraInfoConstPtr& info_msg,
-				Features2D& trackedFeatures);
+				Features2D& trackedFeatures, Features2D& newFeatures);
 	void display(cv_bridge::CvImagePtr cv_ptr);
 
 private:

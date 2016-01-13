@@ -32,7 +32,7 @@ class VisualFrontend
 public:
 	VisualFrontend();
 
-	void trackAndExtract(cv::Mat& im_gray, Features2D& newPoints);
+	void trackAndExtract(cv::Mat& im_gray, Features2D& trackedPoints, Features2D& newPoints);
 
 	inline Features2D& getCurrentFeatures()
 	{
@@ -40,7 +40,7 @@ public:
 	}
 
 protected:
-	void extract(cv::Mat& im_gray);
+	void extract(cv::Mat& im_gray, Features2D& newPoints);
 	void track(cv::Mat& im_gray, Features2D& points);
 
 protected:

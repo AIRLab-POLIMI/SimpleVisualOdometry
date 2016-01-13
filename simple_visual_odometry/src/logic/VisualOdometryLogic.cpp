@@ -77,10 +77,11 @@ void VisualOdometryLogic::handleImage(const sensor_msgs::ImageConstPtr& msg,
 		Mat image = cv_ptr->image;
 
 		Features2D trackedFeatures;
-		frontend.trackAndExtract(image, trackedFeatures);
+		Features2D newFeatures;
+		frontend.trackAndExtract(image, trackedFeatures, newFeatures);
 
 		//Track pose
-		trackPose(info_msg, trackedFeatures);
+		trackPose(info_msg, trackedFeatures, newFeatures);
 
 		//publish features
 		//publishFeatures(msg->header.frame_id, msg->header.stamp);
@@ -131,7 +132,7 @@ void VisualOdometryLogic::publishFeatures(const string& frame_id,
 
 void VisualOdometryLogic::trackPose(
 			const sensor_msgs::CameraInfoConstPtr& info_msg,
-			Features2D& trackedFeatures)
+			Features2D& trackedFeatures, Features2D& newFeatures)
 {
 	image_geometry::PinholeCameraModel cameraModel;
 	cameraModel.fromCameraInfo(info_msg);
@@ -140,7 +141,7 @@ void VisualOdometryLogic::trackPose(
 	Matx34d P = cameraModel.fullProjectionMatrix();
 	Matx33d K = P.get_minor<3, 3>(0, 0);
 	backend->setK(K);
-	T_WC = backend->computePose(trackedFeatures);
+	T_WC = backend->computePose(trackedFeatures, newFeatures);
 
 	Eigen::Affine3d T_WR = T_WC * T_CR;
 

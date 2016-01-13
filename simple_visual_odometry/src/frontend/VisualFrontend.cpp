@@ -40,29 +40,29 @@ VisualFrontend::VisualFrontend()
 
 }
 
-void VisualFrontend::trackAndExtract(cv::Mat& im_gray, Features2D& newPoints)
+void VisualFrontend::trackAndExtract(cv::Mat& im_gray, Features2D& trackedPoints, Features2D& newPoints)
 {
 
 	if (oldPoints.size() > 0)
 	{
 		//Track prevoius points with optical flow
-		track(im_gray, newPoints);
+		track(im_gray, trackedPoints);
 
 		//Save tracked points
-		oldPoints = newPoints;
+		oldPoints = trackedPoints;
 	}
 
 	//Extract new points
-	extract(im_gray);
+	extract(im_gray, newPoints);
 
 	//save old image
 	im_prev = im_gray;
 }
 
-void VisualFrontend::extract(Mat& im_gray)
+void VisualFrontend::extract(Mat& im_gray, Features2D& newPoints)
 {
-	vector<KeyPoint> newPoints;
-	detector->detect(im_gray, newPoints);
+	vector<KeyPoint> newPointsVector;
+	detector->detect(im_gray, newPointsVector);
 
 	//Prepare grid
 	grid.setImageSize(im_gray.cols, im_gray.rows);
@@ -71,11 +71,12 @@ void VisualFrontend::extract(Mat& im_gray)
 		grid.addPoint(oldPoint);
 	}
 
-	for (auto point : newPoints)
+	for (auto point : newPointsVector)
 	{
 		if (grid.isNewFeature(point.pt))
 		{
 			oldPoints.addPoint(point.pt, newId);
+			newPoints.addPoint(point.pt, newId);
 			newId++;
 		}
 	}
@@ -83,7 +84,7 @@ void VisualFrontend::extract(Mat& im_gray)
 	grid.resetGrid();
 }
 
-void VisualFrontend::track(Mat& im_gray, Features2D& newPoints)
+void VisualFrontend::track(Mat& im_gray, Features2D& trackedPoints)
 {
 	vector<unsigned char> status;
 	vector<unsigned char> status_back;
@@ -112,6 +113,6 @@ void VisualFrontend::track(Mat& im_gray, Features2D& newPoints)
 	for (size_t i = 0; i < status.size(); i++)
 		status[i] = (fb_err[i] <= thresholdFBError) && status[i];
 
-	newPoints = Features2D(oldPoints, nextPts, status);
+	trackedPoints = Features2D(oldPoints, nextPts, status);
 
 }

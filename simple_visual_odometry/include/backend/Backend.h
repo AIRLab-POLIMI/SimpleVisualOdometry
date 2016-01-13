@@ -50,7 +50,7 @@ public:
 public:
 	Backend();
 
-	virtual Eigen::Affine3d computePose(Features2D& trackedFeatures) = 0;
+	virtual Eigen::Affine3d computePose(Features2D& trackedFeatures, Features2D& newFeatures) = 0;
 	virtual Features3Dn getFeatures() const = 0;
 
 	inline void setCameraPose(Eigen::Affine3d& T_WC)

@@ -26,7 +26,7 @@
 using namespace std;
 using namespace cv;
 
-Eigen::Affine3d Backend2D::computePose(Features2D& features)
+Eigen::Affine3d Backend2D::computePose(Features2D& trackedFeatures, Features2D& newFeatures)
 {
 	//Points frame is last frame
 	Fpoints = T_WC;
@@ -39,10 +39,11 @@ Eigen::Affine3d Backend2D::computePose(Features2D& features)
 			case Initial:
 			case Lost:
 			{
-				if (features.size() > minInitialFeatures)
+				if (newFeatures.size() + trackedFeatures.size() > minInitialFeatures)
 				{
 					//Accept first features
-					oldFeatures = features;
+					oldFeatures = trackedFeatures;
+					oldFeatures.addPoints(newFeatures);
 
 					//Update state
 					state = Initializing;
@@ -53,14 +54,14 @@ Eigen::Affine3d Backend2D::computePose(Features2D& features)
 			case Initializing:
 			case Tracking:
 			{
-				if (features.size() < minFeatures)
+				if (trackedFeatures.size() < minFeatures)
 					throw Backend::no_points_exception();
 
 				Features2Dn featuresOldnorm;
 				Features2Dn featuresNewnorm;
 
 				double deltaMean = computeNormalizedFeatures(oldFeatures,
-							features, featuresOldnorm, featuresNewnorm);
+							trackedFeatures, featuresOldnorm, featuresNewnorm);
 
 				if (featuresOldnorm.size() < minFeatures)
 					throw Backend::no_points_exception();
@@ -87,12 +88,13 @@ Eigen::Affine3d Backend2D::computePose(Features2D& features)
 					//Compute new pose
 					T_WC = T_WC * T;
 
-					//Compute points
+					//Save 3d points
 					old3DPoints = triangulated;
 					old3DPoints.scalePoints(scale);
 
-					//compute Features
-					oldFeatures = features;
+					//Save current features
+					oldFeatures = trackedFeatures;
+					oldFeatures.addPoints(newFeatures);
 
 					//Update state
 					state = Tracking;
