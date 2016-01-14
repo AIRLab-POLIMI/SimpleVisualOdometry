@@ -34,7 +34,8 @@ public:
 	virtual Features3Dn getFeatures() const override;
 
 private:
-	void computeMotion(Features2D& trackedFeatures);
+	void getCorrespondences(const Features2D& trackedFeatures, Features2D& features2D, Features3Dn& features3D);
+
 
 	cv::Mat rodriguesFromPose(const Eigen::Affine3d& T);
 	cv::Mat translationFromPose(const Eigen::Affine3d& T);

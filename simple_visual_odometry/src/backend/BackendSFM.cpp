@@ -94,7 +94,23 @@ Eigen::Affine3d BackendSFM::computePose(Features2D& trackedFeatures,
 			case Tracking:
 			{
 				//Compute motion
-				//solvePnPRansac(old3DPoints.getPoints(), trackedFeatures.getPoints(), K, NULL, )
+				Features2D features2D;
+				Features3Dn features3D;
+				getCorrespondences(trackedFeatures, features2D, features3D);
+
+				cv::Mat rvec = rodriguesFromPose(T_WC);
+				cv::Mat tvec = translationFromPose(T_WC);
+
+				vector<unsigned char> mask;
+
+				solvePnPRansac(features3D.getPoints(), features2D.getPoints(),
+							K, 0, rvec, tvec, true, 100, 1.0,
+							0.9 * features2D.size(), mask, CV_P3P);
+
+				cv::Mat C = computeCameraMatrix(rvec, tvec);
+
+				//Compute structure
+
 
 				break;
 			}
@@ -121,12 +137,24 @@ Features3Dn BackendSFM::getFeatures() const
 	return new3DPoints;
 }
 
-void BackendSFM::computeMotion(Features2D& trackedFeatures)
+void BackendSFM::getCorrespondences(const Features2D& trackedFeatures,
+			Features2D& features2D, Features3Dn& features3D)
 {
+	for (unsigned int i = 0; i < trackedFeatures.size(); i++)
+	{
+		unsigned int id = trackedFeatures.getId(i);
 
+		if (old3DPoints.contains(id))
+		{
+			unsigned int index = old3DPoints.getIndex(id);
+
+			features2D.addPoint(trackedFeatures[i], id);
+			features3D.addPoint(old3DPoints[index], id);
+		}
+	}
 }
 
-cv::Mat rodriguesFromPose(const Eigen::Affine3d& T)
+cv::Mat BackendSFM::rodriguesFromPose(const Eigen::Affine3d& T)
 {
 	Eigen::Matrix3d R = T.rotation();
 	Mat Rcv = (Mat_<double>(3, 3) <<  //
@@ -140,7 +168,7 @@ cv::Mat rodriguesFromPose(const Eigen::Affine3d& T)
 	return rvec;
 }
 
-cv::Mat translationFromPose(const Eigen::Affine3d& T)
+cv::Mat BackendSFM::translationFromPose(const Eigen::Affine3d& T)
 {
 	Mat_<double> t(3, 1);
 
@@ -149,7 +177,7 @@ cv::Mat translationFromPose(const Eigen::Affine3d& T)
 	t(2, 0) = T.translation().z();
 }
 
-cv::Mat computeCameraMatrix(const cv::Mat& rvec, const cv::Mat& t)
+cv::Mat BackendSFM::computeCameraMatrix(const cv::Mat& rvec, const cv::Mat& t)
 {
 	Mat R;
 	Rodrigues(rvec, R);
