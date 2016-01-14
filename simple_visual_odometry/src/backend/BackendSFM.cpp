@@ -104,23 +104,18 @@ Eigen::Affine3d BackendSFM::computePose(Features2D& trackedFeatures,
 				Features3D features3D;
 				getCorrespondences(trackedFeatures, features2D, features3D);
 
-				/*cv::Mat rvec = rodriguesFromPose(T_WC);
-				cv::Mat tvec = translationFromPose(T_WC);*/
+				Eigen::Affine3d T_CW = T_WC.inverse();
+				cv::Mat rvec = rodriguesFromPose(T_CW);
+				cv::Mat tvec = translationFromPose(T_CW);
 
-				Mat rvec;
-				Mat tvec;
-				solvePnP(features3D.getPoints(), features2D.getPoints(),
-							K, Mat(), rvec, tvec, false, CV_EPNP);
+				/*vector<unsigned char> mask;
 
-				/*Mat rvec;
-				Mat tvec;
-
-				vector<unsigned char> mask;
-
-				Mat dist;
 				solvePnPRansac(features3D.getPoints(), features2D.getPoints(),
-							K, Mat(), rvec, tvec, false, 100, 1.0,
-							0.9 * features2D.size(), mask);*/
+							K, Mat(), rvec, tvec, true, 100, 8.0,
+							0.9 * features2D.size(), mask, CV_ITERATIVE);*/
+
+				solvePnP(features3D.getPoints(), features2D.getPoints(),
+											K, Mat(), rvec, tvec, true, CV_ITERATIVE);
 
 				cv::Mat C = computeCameraMatrix(rvec, tvec);
 
@@ -197,6 +192,8 @@ cv::Mat BackendSFM::translationFromPose(const Eigen::Affine3d& T)
 	t(0, 0) = T.translation().x();
 	t(1, 0) = T.translation().y();
 	t(2, 0) = T.translation().z();
+
+	return t;
 }
 
 cv::Mat BackendSFM::computeCameraMatrix(const cv::Mat& rvec, const cv::Mat& t)
