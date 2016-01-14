@@ -50,7 +50,8 @@ public:
 public:
 	Backend();
 
-	virtual Eigen::Affine3d computePose(Features2D& trackedFeatures, Features2D& newFeatures) = 0;
+	virtual Eigen::Affine3d computePose(Features2D& trackedFeatures,
+				Features2D& newFeatures) = 0;
 	virtual Features3Dn getFeatures() const = 0;
 
 	inline void setCameraPose(Eigen::Affine3d& T_WC)
@@ -60,7 +61,7 @@ public:
 
 	inline void setK(const cv::Matx33d& K)
 	{
-		Kinv = K.inv();
+		this->K = K;
 		double fx = K(0, 0);
 		double fy = K(1, 1);
 		Kscale = (fx + fy) / 2;
@@ -86,21 +87,20 @@ protected:
 
 	Eigen::Affine3d cameraToTransform(const cv::Mat& C, double scale = 1.0);
 
-	double computeNormalizedFeatures(Features2D& oldFeatures,
-				Features2D& newFeatures, Features2Dn& oldFeaturesNorm,
-				Features2Dn& newFeaturesNorm);
+	double getCorrespondecesAndDelta(Features2D& oldFeatures,
+				Features2D& newFeatures, Features2D& oldCF, Features2D& newCF);
 
 	cv::Vec2d computeNormalizedPoint(cv::Point2f& point);
 
-	Features3Dn triangulate(Features2Dn& oldFeaturesNorm,
-				Features2Dn& newFeaturesNorm, std::vector<unsigned char>& mask,
-				cv::Mat C, cv::Mat C0 = cv::Mat::eye(3, 4, CV_64FC1));
+	Features3Dn triangulate(Features2D& oldFeatures, Features2D& newFeatures,
+				std::vector<unsigned char>& mask, cv::Mat C, cv::Mat C0 =
+							cv::Mat::eye(3, 4, CV_64FC1));
 
-	cv::Mat recoverCameraFromEssential(Features2Dn& oldFeaturesNorm,
-					Features2Dn& newFeaturesNorm, std::vector<unsigned char>& mask);
+	cv::Mat recoverCameraFromEssential(Features2D& oldFeaturesNorm,
+				Features2D& newFeaturesNorm, std::vector<unsigned char>& mask);
 
 protected:
-	cv::Matx33d Kinv;
+	cv::Matx33d K;
 	double Kscale;
 
 	//Tracking status

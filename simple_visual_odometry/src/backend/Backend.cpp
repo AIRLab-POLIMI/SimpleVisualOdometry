@@ -34,23 +34,16 @@ Backend::Backend()
 
 Vec2d Backend::computeNormalizedPoint(Point2f& point)
 {
-	Vec3d hpt;
-	hpt[0] = point.x;
-	hpt[1] = point.y;
-	hpt[2] = 1;
+	double fx = K(0, 0);
+	double fy = K(1, 1);
+	double cx = K(0, 2);
+	double cy = K(1, 2);
 
-	hpt = Kinv * hpt;
-
-	Vec2d pt;
-	pt[0] = hpt[0];
-	pt[1] = hpt[1];
-
-	return pt;
+	return Vec2d((point.x - cx) / fx, (point.y - cy) / fy);
 }
 
-double Backend::computeNormalizedFeatures(Features2D& oldFeatures,
-			Features2D& newFeatures, Features2Dn& oldFeaturesNorm,
-			Features2Dn& newFeaturesNorm)
+double Backend::getCorrespondecesAndDelta(Features2D& oldFeatures,
+			Features2D& newFeatures, Features2D& oldCF, Features2D& newCF)
 {
 
 	double deltaMean = 0;
@@ -64,11 +57,8 @@ double Backend::computeNormalizedFeatures(Features2D& oldFeatures,
 		{
 			unsigned int index = oldFeatures.getIndex(id);
 
-			Vec2d oldPoint = computeNormalizedPoint(oldFeatures[index]);
-			Vec2d newPoint = computeNormalizedPoint(newFeatures[i]);
-
-			oldFeaturesNorm.addPoint(oldPoint, id);
-			newFeaturesNorm.addPoint(newPoint, id);
+			oldCF.addPoint(oldFeatures[index], id);
+			newCF.addPoint(newFeatures[i], id);
 
 			deltaMean += norm(oldFeatures[index] - newFeatures[i]);
 			N++;
@@ -79,15 +69,14 @@ double Backend::computeNormalizedFeatures(Features2D& oldFeatures,
 	return deltaMean;
 }
 
-Features3Dn Backend::triangulate(Features2Dn& oldFeaturesNorm,
-			Features2Dn& newFeaturesNorm, vector<unsigned char>& mask, Mat C,
-			Mat C0)
+Features3Dn Backend::triangulate(Features2D& oldFeatures,
+			Features2D& newFeatures, vector<unsigned char>& mask, Mat C, Mat C0)
 {
 	Features3Dn triangulated;
 
-	Mat points4D(1, oldFeaturesNorm.size(), CV_64FC4);
-	triangulatePoints(C0, C, oldFeaturesNorm.getPoints(),
-				newFeaturesNorm.getPoints(), points4D);
+	Mat points4D(1, oldFeatures.size(), CV_64FC4);
+	triangulatePoints(Mat(K) * C0, Mat(K) * C, oldFeatures.getPoints(),
+				newFeatures.getPoints(), points4D);
 
 	for (unsigned int i = 0; i < points4D.cols; i++)
 	{
@@ -96,7 +85,7 @@ Features3Dn Backend::triangulate(Features2Dn& oldFeaturesNorm,
 			Vec4d point4d = points4D.col(i);
 			point4d = point4d / point4d[3];
 			Vec3d point(point4d[0], point4d[1], point4d[2]);
-			triangulated.addPoint(point, oldFeaturesNorm.getId(i));
+			triangulated.addPoint(point, oldFeatures.getId(i));
 		}
 	}
 
@@ -104,21 +93,20 @@ Features3Dn Backend::triangulate(Features2Dn& oldFeaturesNorm,
 
 }
 
-Mat Backend::recoverCameraFromEssential(Features2Dn& oldFeaturesNorm,
-			Features2Dn& newFeaturesNorm, vector<unsigned char>& mask)
+Mat Backend::recoverCameraFromEssential(Features2D& oldFeaturesNorm,
+			Features2D& newFeaturesNorm, vector<unsigned char>& mask)
 {
-	vector<Vec2d> points1 = oldFeaturesNorm.getPoints();
-	vector<Vec2d> points2 = newFeaturesNorm.getPoints();
+	vector<Point2f> points1 = oldFeaturesNorm.getPoints();
+	vector<Point2f> points2 = newFeaturesNorm.getPoints();
 
-	Mat E = findEssentialMat(points1, points2, 1.0, Point2d(0, 0), FM_RANSAC,
-				0.99, 0.5 / Kscale, mask);
+	Mat E = findEssentialMat(points1, points2, K, FM_RANSAC, 0.99, 0.5, mask);
 
 	Mat R;
 	Mat t;
 
 	int inliers = countNonZero(mask);
 
-	int newInliers = recoverPose(E, points1, points2, R, t, mask);
+	int newInliers = recoverPose(E, points1, points2, K, R, t, mask);
 
 	if (newInliers < inliers / 2)
 		throw Backend::low_parallax_exception();

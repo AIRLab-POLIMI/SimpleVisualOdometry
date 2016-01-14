@@ -19,6 +19,7 @@ int main(int argc, char *argv[])
 	//Compute 2 camera matrices
 	cv::Matx34d C1 = cv::Matx34d::eye();
 	cv::Matx34d C2 = cv::Matx34d::eye();
+	cv::Mat K = cv::Mat::eye(3, 3, CV_64F);
 
 	C2(2, 3) = 1;
 
@@ -48,7 +49,7 @@ int main(int argc, char *argv[])
 	std::cout << points3D << std::endl;
 
 	//Recover essential
-	cv::Mat tmp = findEssentialMat(points1, points2, 1, cv::Point(0, 0), FM_RANSAC, 0.90, 1);
+	cv::Mat tmp = findEssentialMat(points1, points2, K, FM_RANSAC, 0.99, 1);
 	cv::Matx33d E = tmp;
 	cv::Matx33d F = cv::findFundamentalMat(points1, points2, FM_RANSAC, 1, 0.9);
 
@@ -79,7 +80,7 @@ int main(int argc, char *argv[])
 
 	cv::Mat R;
 	cv::Mat t;
-	recoverPose((Mat)F, points1, points2, R, t);
+	recoverPose((Mat)F, points1, points2, K, R, t);
 
 	std::cout << "R: " << R << std::endl;
 	std::cout << "t: " << t << std::endl;
@@ -87,7 +88,7 @@ int main(int argc, char *argv[])
 
 	cv::Mat R5;
 	cv::Mat t5;
-	recoverPose((Mat)E, points1, points2, R5, t5);
+	recoverPose((Mat)E, points1, points2, K, R5, t5);
 
 	std::cout << "R5: " << R5 << std::endl;
 	std::cout << "t5: " << t5 << std::endl;

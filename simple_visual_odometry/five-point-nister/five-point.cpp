@@ -50,16 +50,20 @@ public:
 
 
 // Input should be a vector of n 2D points or a Nx2 matrix
-Mat findEssentialMat( InputArray _points1, InputArray _points2, double focal, Point2d pp, 
-					int method, double prob, double threshold, OutputArray _mask) 
+Mat findEssentialMat(InputArray _points1, InputArray _points2, InputArray _cameraMatrix,
+            int method, double prob, double threshold, OutputArray _mask)
 {
-	Mat points1, points2; 
+	Mat points1, points2, cameraMatrix;
 	_points1.getMat().copyTo(points1); 
-	_points2.getMat().copyTo(points2); 
+	_points2.getMat().copyTo(points2);
+	_cameraMatrix.getMat().convertTo(cameraMatrix, CV_64F);
 
 	int npoints = points1.checkVector(2);
-    CV_Assert( npoints >= 5 && points2.checkVector(2) == npoints &&
-				              points1.type() == points2.type());
+	CV_Assert(npoints >= 5);
+
+	int npoints2 = points2.checkVector(2);
+	CV_Assert(npoints2 == npoints);
+	CV_Assert(points1.type() == points2.type());
 
 	if (points1.channels() > 1)
 	{
@@ -69,10 +73,15 @@ Mat findEssentialMat( InputArray _points1, InputArray _points2, double focal, Po
 	points1.convertTo(points1, CV_64F); 
 	points2.convertTo(points2, CV_64F); 
 
-	points1.col(0) = (points1.col(0) - pp.x) / focal; 
-	points2.col(0) = (points2.col(0) - pp.x) / focal; 
-	points1.col(1) = (points1.col(1) - pp.y) / focal; 
-	points2.col(1) = (points2.col(1) - pp.y) / focal; 
+	double fx = cameraMatrix.at<double>(0,0);
+	double fy = cameraMatrix.at<double>(1,1);
+	double cx = cameraMatrix.at<double>(0,2);
+	double cy = cameraMatrix.at<double>(1,2);
+
+	points1.col(0) = (points1.col(0) - cx) / fx;
+	points2.col(0) = (points2.col(0) - cx) / fx;
+	points1.col(1) = (points1.col(1) - cy) / fy;
+	points2.col(1) = (points2.col(1) - cy) / fy;
 	
 	// Reshape data to fit opencv ransac function
 	points1 = points1.reshape(2, 1); 
@@ -87,7 +96,8 @@ Mat findEssentialMat( InputArray _points1, InputArray _points2, double focal, Po
 	CvMat* tempMask = cvCreateMat(1, npoints, CV_8U); 
 	
 	assert(npoints >= 5); 
-	threshold /= focal; 
+	threshold /= (fx+fy)/2;
+
     int count = 1; 
     if (npoints == 5)
     {
@@ -117,14 +127,13 @@ Mat findEssentialMat( InputArray _points1, InputArray _points2, double focal, Po
 
 }
 
-int recoverPose( const Mat & E, InputArray _points1, InputArray _points2, Mat & _R, Mat & _t, 
-			InputOutputArray _mask,
-			double focal, Point2d pp
-					)
+int recoverPose(const Mat & E, InputArray _points1, InputArray _points2, InputArray _cameraMatrix,
+			Mat & _R, Mat & _t, InputOutputArray _mask)
 {
-	Mat points1, points2; 
+	Mat points1, points2, cameraMatrix;
 	_points1.getMat().copyTo(points1); 
-	_points2.getMat().copyTo(points2); 
+	_points2.getMat().copyTo(points2);
+	_cameraMatrix.getMat().convertTo(cameraMatrix, CV_64F);
 	int npoints = points1.checkVector(2);
     CV_Assert( npoints >= 0 && points2.checkVector(2) == npoints &&
 				              points1.type() == points2.type());
@@ -137,10 +146,15 @@ int recoverPose( const Mat & E, InputArray _points1, InputArray _points2, Mat & 
 	points1.convertTo(points1, CV_64F); 
 	points2.convertTo(points2, CV_64F); 
 
-	points1.col(0) = (points1.col(0) - pp.x) / focal; 
-	points2.col(0) = (points2.col(0) - pp.x) / focal; 
-	points1.col(1) = (points1.col(1) - pp.y) / focal; 
-	points2.col(1) = (points2.col(1) - pp.y) / focal; 
+	double fx = cameraMatrix.at<double>(0,0);
+	double fy = cameraMatrix.at<double>(1,1);
+	double cx = cameraMatrix.at<double>(0,2);
+	double cy = cameraMatrix.at<double>(1,2);
+
+	points1.col(0) = (points1.col(0) - cx) / fx;
+	points2.col(0) = (points2.col(0) - cx) / fx;
+	points1.col(1) = (points1.col(1) - cy) / fy;
+	points2.col(1) = (points2.col(1) - cy) / fy;
 
 	points1 = points1.t(); 
 	points2 = points2.t(); 

@@ -57,23 +57,24 @@ Eigen::Affine3d BackendSFM::computePose(Features2D& trackedFeatures,
 				if (trackedFeatures.size() < minFeatures)
 					throw Backend::no_points_exception();
 
-				Features2Dn featuresOldnorm;
-				Features2Dn featuresNewnorm;
+				Features2D oldCorrespondences;
+				Features2D newCorrespondences;
 
-				double deltaMean = computeNormalizedFeatures(oldFeatures,
-							trackedFeatures, featuresOldnorm, featuresNewnorm);
+				double deltaMean = getCorrespondecesAndDelta(oldFeatures,
+							trackedFeatures, oldCorrespondences,
+							newCorrespondences);
 
-				if (featuresOldnorm.size() < minFeatures)
+				if (oldCorrespondences.size() < minFeatures)
 					throw Backend::no_points_exception();
 
 				if (sufficientDelta(deltaMean))
 				{
 					vector<unsigned char> mask;
-					Mat C = recoverCameraFromEssential(featuresOldnorm,
-								featuresNewnorm, mask);
+					Mat C = recoverCameraFromEssential(oldCorrespondences,
+								newCorrespondences, mask);
 
-					Features3Dn&& triangulated = triangulate(featuresOldnorm,
-								featuresNewnorm, mask, C);
+					Features3Dn&& triangulated = triangulate(oldCorrespondences,
+								newCorrespondences, mask, C);
 
 					//Save points
 					old3DPoints = triangulated;
@@ -110,7 +111,6 @@ Eigen::Affine3d BackendSFM::computePose(Features2D& trackedFeatures,
 				cv::Mat C = computeCameraMatrix(rvec, tvec);
 
 				//Compute structure
-
 
 				break;
 			}

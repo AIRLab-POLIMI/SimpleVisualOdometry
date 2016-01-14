@@ -47,6 +47,7 @@ Eigen::Affine3d Backend2D::computePose(Features2D& trackedFeatures, Features2D& 
 
 					//Update state
 					state = Initializing;
+					std::cout << "Initializing" << std::endl;
 				}
 				break;
 			}
@@ -57,23 +58,23 @@ Eigen::Affine3d Backend2D::computePose(Features2D& trackedFeatures, Features2D& 
 				if (trackedFeatures.size() < minFeatures)
 					throw Backend::no_points_exception();
 
-				Features2Dn featuresOldnorm;
-				Features2Dn featuresNewnorm;
+				Features2D oldCorrespondences;
+				Features2D newCorrespondences;
 
-				double deltaMean = computeNormalizedFeatures(oldFeatures,
-							trackedFeatures, featuresOldnorm, featuresNewnorm);
+				double deltaMean = getCorrespondecesAndDelta(oldFeatures,
+							trackedFeatures, oldCorrespondences, newCorrespondences);
 
-				if (featuresOldnorm.size() < minFeatures)
+				if (oldCorrespondences.size() < minFeatures)
 					throw Backend::no_points_exception();
 
 				if (sufficientDelta(deltaMean))
 				{
 					vector<unsigned char> mask;
-					Mat C = recoverCameraFromEssential(featuresOldnorm,
-								featuresNewnorm, mask);
+					Mat C = recoverCameraFromEssential(oldCorrespondences,
+								newCorrespondences, mask);
 
-					Features3Dn&& triangulated = triangulate(featuresOldnorm,
-								featuresNewnorm, mask, C);
+					Features3Dn&& triangulated = triangulate(oldCorrespondences,
+								newCorrespondences, mask, C);
 
 					double scale = 1.0;
 
@@ -114,7 +115,7 @@ Eigen::Affine3d Backend2D::computePose(Features2D& trackedFeatures, Features2D& 
 	}
 	catch (Backend::no_points_exception& e)
 	{
-		std::cout << "LOST!" << std::endl;
+		std::cout << "LOST" << std::endl;
 		old3DPoints = Features3Dn();
 
 		//Update state
