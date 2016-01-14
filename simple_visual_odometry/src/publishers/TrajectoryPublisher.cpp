@@ -23,7 +23,8 @@
 
 #include "publishers/TrajectoryPublisher.h"
 
-#include <tf2_eigen/tf2_eigen.h>
+//#include <tf2_eigen/tf2_eigen.h>
+#include "tf2_eigen.h" //FIXME levare quando funzionerà tf2_eigen
 
 TrajectoryPublisher::TrajectoryPublisher(const std::string& frame_id)
 {

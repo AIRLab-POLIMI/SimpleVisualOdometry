@@ -57,6 +57,7 @@ public:
 	inline void setCameraPose(Eigen::Affine3d& T_WC)
 	{
 		this->T_WC = T_WC;
+		Fpoints = T_WC;
 	}
 
 	inline void setK(const cv::Matx33d& K)

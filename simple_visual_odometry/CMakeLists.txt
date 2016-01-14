@@ -5,7 +5,6 @@ find_package(catkin REQUIRED COMPONENTS roscpp
                                         image_transport
                                         image_geometry
                                         tf2_ros
-                                        tf2_eigen
                                         nav_msgs
                                         visualization_msgs)
                                         

@@ -23,9 +23,9 @@
 
 #include "backend/BackendSFM.h"
 
-BackendSFM::BackendSFM(const Eigen::Affine3d& F)
+BackendSFM::BackendSFM()
 {
-	Fpoints = F;
+
 }
 
 Eigen::Affine3d BackendSFM::computePose(Features2D& trackedFeatures,
@@ -104,14 +104,23 @@ Eigen::Affine3d BackendSFM::computePose(Features2D& trackedFeatures,
 				Features3D features3D;
 				getCorrespondences(trackedFeatures, features2D, features3D);
 
-				cv::Mat rvec = rodriguesFromPose(T_WC);
-				cv::Mat tvec = translationFromPose(T_WC);
+				/*cv::Mat rvec = rodriguesFromPose(T_WC);
+				cv::Mat tvec = translationFromPose(T_WC);*/
+
+				Mat rvec;
+				Mat tvec;
+				solvePnP(features3D.getPoints(), features2D.getPoints(),
+							K, Mat(), rvec, tvec, false, CV_EPNP);
+
+				/*Mat rvec;
+				Mat tvec;
 
 				vector<unsigned char> mask;
 
+				Mat dist;
 				solvePnPRansac(features3D.getPoints(), features2D.getPoints(),
-							K, 0, rvec, tvec, true, 100, 1.0,
-							0.9 * features2D.size(), mask, CV_P3P);
+							K, Mat(), rvec, tvec, false, 100, 1.0,
+							0.9 * features2D.size(), mask);*/
 
 				cv::Mat C = computeCameraMatrix(rvec, tvec);
 

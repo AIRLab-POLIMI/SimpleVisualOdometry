@@ -29,7 +29,7 @@
 class BackendSFM: public Backend
 {
 public:
-	BackendSFM(const Eigen::Affine3d& F);
+	BackendSFM();
 	virtual Eigen::Affine3d computePose(Features2D& trackedFeatures, Features2D& newFeatures) override;
 	virtual Features3D getFeatures() const override;
 

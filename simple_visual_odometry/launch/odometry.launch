@@ -31,7 +31,7 @@
     </node>
               
               
-    <!--  launch-prefix="gdb -x /home/dave/cmds -#-args --> 	
+    <!--  launch-prefix="gdb -x /home/dave/cmds -#-args" --> 	
     
     <node name="rviz" 
           pkg="rviz" 

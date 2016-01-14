@@ -27,7 +27,8 @@
 
 #include <image_geometry/pinhole_camera_model.h>
 
-#include <tf2_eigen/tf2_eigen.h>
+//#include <tf2_eigen/tf2_eigen.h>
+#include "tf2_eigen.h" //FIXME levare quando funzionerà tf2_eigen
 
 #include "backend/Backend2D.h"
 #include "backend/BackendSFM.h"
@@ -63,7 +64,7 @@ VisualOdometryLogic::VisualOdometryLogic(string imageTopic, ros::NodeHandle& n) 
 
 	//Init Backend
 	//backend = new Backend2D();
-	backend = new BackendSFM(T_CR);
+	backend = new BackendSFM();
 	backend->setCameraPose(T_WC);
 
 }
