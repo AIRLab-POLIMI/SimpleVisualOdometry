@@ -69,10 +69,10 @@ double Backend::getCorrespondecesAndDelta(Features2D& oldFeatures,
 	return deltaMean;
 }
 
-Features3Dn Backend::triangulate(Features2D& oldFeatures,
+Features3D Backend::triangulate(Features2D& oldFeatures,
 			Features2D& newFeatures, vector<unsigned char>& mask, Mat C, Mat C0)
 {
-	Features3Dn triangulated;
+	Features3D triangulated;
 
 	Mat points4D(1, oldFeatures.size(), CV_64FC4);
 	triangulatePoints(Mat(K) * C0, Mat(K) * C, oldFeatures.getPoints(),
@@ -84,7 +84,7 @@ Features3Dn Backend::triangulate(Features2D& oldFeatures,
 		{
 			Vec4d point4d = points4D.col(i);
 			point4d = point4d / point4d[3];
-			Vec3d point(point4d[0], point4d[1], point4d[2]);
+			Point3f point(point4d[0], point4d[1], point4d[2]);
 			triangulated.addPoint(point, oldFeatures.getId(i));
 		}
 	}
@@ -99,7 +99,7 @@ Mat Backend::recoverCameraFromEssential(Features2D& oldFeaturesNorm,
 	vector<Point2f> points1 = oldFeaturesNorm.getPoints();
 	vector<Point2f> points2 = newFeaturesNorm.getPoints();
 
-	Mat E = findEssentialMat(points1, points2, K, FM_RANSAC, 0.99, 0.5, mask);
+	Mat E = findEssentialMat(points1, points2, K, FM_RANSAC, 0.999, 0.5, mask);
 
 	Mat R;
 	Mat t;

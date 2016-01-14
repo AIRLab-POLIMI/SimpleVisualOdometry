@@ -31,10 +31,10 @@ class BackendSFM: public Backend
 public:
 	BackendSFM(const Eigen::Affine3d& F);
 	virtual Eigen::Affine3d computePose(Features2D& trackedFeatures, Features2D& newFeatures) override;
-	virtual Features3Dn getFeatures() const override;
+	virtual Features3D getFeatures() const override;
 
 private:
-	void getCorrespondences(const Features2D& trackedFeatures, Features2D& features2D, Features3Dn& features3D);
+	void getCorrespondences(const Features2D& trackedFeatures, Features2D& features2D, Features3D& features3D);
 
 
 	cv::Mat rodriguesFromPose(const Eigen::Affine3d& T);
@@ -44,8 +44,8 @@ private:
 private:
 	//Features data
 	Features2D oldFeatures;
-	Features3Dn old3DPoints;
-	Features3Dn new3DPoints;
+	Features3D old3DPoints;
+	Features3D new3DPoints;
 
 private:
 	static const unsigned int minInitialFeatures = 100;

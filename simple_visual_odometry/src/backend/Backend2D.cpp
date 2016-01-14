@@ -49,8 +49,9 @@ Eigen::Affine3d Backend2D::computePose(Features2D& trackedFeatures, Features2D& 
 					state = Initializing;
 					std::cout << "Initializing" << std::endl;
 				}
-				break;
 			}
+
+			break;
 
 			case Initializing:
 			case Tracking:
@@ -73,7 +74,7 @@ Eigen::Affine3d Backend2D::computePose(Features2D& trackedFeatures, Features2D& 
 					Mat C = recoverCameraFromEssential(oldCorrespondences,
 								newCorrespondences, mask);
 
-					Features3Dn&& triangulated = triangulate(oldCorrespondences,
+					Features3D&& triangulated = triangulate(oldCorrespondences,
 								newCorrespondences, mask, C);
 
 					double scale = 1.0;
@@ -101,8 +102,9 @@ Eigen::Affine3d Backend2D::computePose(Features2D& trackedFeatures, Features2D& 
 					state = Tracking;
 				}
 
-				break;
 			}
+
+			break;
 
 			default:
 				break;
@@ -115,8 +117,8 @@ Eigen::Affine3d Backend2D::computePose(Features2D& trackedFeatures, Features2D& 
 	}
 	catch (Backend::no_points_exception& e)
 	{
-		std::cout << "LOST" << std::endl;
-		old3DPoints = Features3Dn();
+		std::cout << "Lost" << std::endl;
+		old3DPoints = Features3D();
 
 		//Update state
 		state = Lost;
@@ -126,12 +128,12 @@ Eigen::Affine3d Backend2D::computePose(Features2D& trackedFeatures, Features2D& 
 
 }
 
-Features3Dn Backend2D::getFeatures() const
+Features3D Backend2D::getFeatures() const
 {
 	return old3DPoints;
 }
 
-double Backend2D::estimateScale(Features3Dn& new3DPoints)
+double Backend2D::estimateScale(Features3D& new3DPoints)
 {
 	vector<double> scaleVector;
 

@@ -52,7 +52,7 @@ public:
 
 	virtual Eigen::Affine3d computePose(Features2D& trackedFeatures,
 				Features2D& newFeatures) = 0;
-	virtual Features3Dn getFeatures() const = 0;
+	virtual Features3D getFeatures() const = 0;
 
 	inline void setCameraPose(Eigen::Affine3d& T_WC)
 	{
@@ -92,7 +92,7 @@ protected:
 
 	cv::Vec2d computeNormalizedPoint(cv::Point2f& point);
 
-	Features3Dn triangulate(Features2D& oldFeatures, Features2D& newFeatures,
+	Features3D triangulate(Features2D& oldFeatures, Features2D& newFeatures,
 				std::vector<unsigned char>& mask, cv::Mat C, cv::Mat C0 =
 							cv::Mat::eye(3, 4, CV_64FC1));
 

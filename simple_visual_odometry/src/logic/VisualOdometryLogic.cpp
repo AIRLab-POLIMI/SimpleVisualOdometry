@@ -30,6 +30,7 @@
 #include <tf2_eigen/tf2_eigen.h>
 
 #include "backend/Backend2D.h"
+#include "backend/BackendSFM.h"
 
 namespace enc = sensor_msgs::image_encodings;
 using namespace cv;
@@ -61,7 +62,8 @@ VisualOdometryLogic::VisualOdometryLogic(string imageTopic, ros::NodeHandle& n) 
 	namedWindow(src_window, CV_WINDOW_AUTOSIZE);
 
 	//Init Backend
-	backend = new Backend2D();
+	//backend = new Backend2D();
+	backend = new BackendSFM(T_CR);
 	backend->setCameraPose(T_WC);
 
 }

@@ -31,6 +31,7 @@ BackendSFM::BackendSFM(const Eigen::Affine3d& F)
 Eigen::Affine3d BackendSFM::computePose(Features2D& trackedFeatures,
 			Features2D& newFeatures)
 {
+
 	try
 	{
 		switch (state)
@@ -47,10 +48,11 @@ Eigen::Affine3d BackendSFM::computePose(Features2D& trackedFeatures,
 
 					//Update state
 					state = Initializing;
+					std::cout << "Initializing" << std::endl;
 				}
-
-				break;
 			}
+
+			break;
 
 			case Initializing:
 			{
@@ -73,7 +75,7 @@ Eigen::Affine3d BackendSFM::computePose(Features2D& trackedFeatures,
 					Mat C = recoverCameraFromEssential(oldCorrespondences,
 								newCorrespondences, mask);
 
-					Features3Dn&& triangulated = triangulate(oldCorrespondences,
+					Features3D&& triangulated = triangulate(oldCorrespondences,
 								newCorrespondences, mask, C);
 
 					//Save points
@@ -85,18 +87,21 @@ Eigen::Affine3d BackendSFM::computePose(Features2D& trackedFeatures,
 
 					//Compute new pose
 					T_WC = T_WC * T;
+
+					//Update state
+					state = Tracking;
+					std::cout << "Tracking" << std::endl;
 				}
 
-				//Update state
-				state = Tracking;
-				break;
 			}
+
+			break;
 
 			case Tracking:
 			{
 				//Compute motion
 				Features2D features2D;
-				Features3Dn features3D;
+				Features3D features3D;
 				getCorrespondences(trackedFeatures, features2D, features3D);
 
 				cv::Mat rvec = rodriguesFromPose(T_WC);
@@ -112,17 +117,25 @@ Eigen::Affine3d BackendSFM::computePose(Features2D& trackedFeatures,
 
 				//Compute structure
 
-				break;
+
+				//Compute new pose
+				T_WC = cameraToTransform(C);
 			}
+
+			break;
 
 			default:
 				break;
 
 		}
 	}
+	catch (Backend::low_parallax_exception& e)
+	{
+
+	}
 	catch (Backend::no_points_exception& e)
 	{
-		std::cout << "LOST!" << std::endl;
+		std::cout << "Lost" << std::endl;
 
 		//Update state
 		state = Lost;
@@ -132,13 +145,13 @@ Eigen::Affine3d BackendSFM::computePose(Features2D& trackedFeatures,
 
 }
 
-Features3Dn BackendSFM::getFeatures() const
+Features3D BackendSFM::getFeatures() const
 {
 	return new3DPoints;
 }
 
 void BackendSFM::getCorrespondences(const Features2D& trackedFeatures,
-			Features2D& features2D, Features3Dn& features3D)
+			Features2D& features2D, Features3D& features3D)
 {
 	for (unsigned int i = 0; i < trackedFeatures.size(); i++)
 	{

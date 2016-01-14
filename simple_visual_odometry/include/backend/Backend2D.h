@@ -31,10 +31,10 @@ class Backend2D: public Backend
 public:
 	virtual Eigen::Affine3d computePose(Features2D& trackedFeatures, Features2D& newFeatures) override;
 
-	virtual Features3Dn getFeatures() const override;
+	virtual Features3D getFeatures() const override;
 
 private:
-	double estimateScale(Features3Dn& new3DPoints);
+	double estimateScale(Features3D& new3DPoints);
 
 	double estimateScaleMedian(std::vector<double>& scaleVector);
 	double estimateScaleMean(std::vector<double>& scaleVector);
@@ -42,7 +42,7 @@ private:
 private:
 	//Features data
 	Features2D oldFeatures;
-	Features3Dn old3DPoints;
+	Features3D old3DPoints;
 
 private:
 	static const unsigned int minInitialFeatures = 100;

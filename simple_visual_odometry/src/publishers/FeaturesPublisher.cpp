@@ -33,7 +33,7 @@ FeaturesPublisher::FeaturesPublisher()
 
 }
 
-void FeaturesPublisher::publishFeatureMarkers(const Features3Dn& features, const Eigen::Affine3d& F)
+void FeaturesPublisher::publishFeatureMarkers(const Features3D& features, const Eigen::Affine3d& F)
 {
   static unsigned int id = 0;
   visualization_msgs::Marker msg;
@@ -69,11 +69,11 @@ void FeaturesPublisher::publishFeatureMarkers(const Features3Dn& features, const
 
   for (int k = 0; k < features.size(); ++k)
   {
-	cv::Vec3d f = features[k];
+	cv::Point3f f = features[k];
 
-    msg.points[k].x = f(0);
-    msg.points[k].y = f(1);
-    msg.points[k].z = f(2);
+    msg.points[k].x = f.x;
+    msg.points[k].y = f.y;
+    msg.points[k].z = f.z;
   }
 
   markers_pub.publish(msg);

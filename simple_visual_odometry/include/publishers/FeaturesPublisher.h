@@ -32,7 +32,7 @@ class FeaturesPublisher
 {
 public:
 	FeaturesPublisher();
-	void publishFeatureMarkers(const Features3Dn& features, const Eigen::Affine3d& F);
+	void publishFeatureMarkers(const Features3D& features, const Eigen::Affine3d& F);
 
 private:
 	ros::Publisher markers_pub;
