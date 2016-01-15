@@ -28,7 +28,6 @@ using namespace std;
 
 Backend::Backend()
 {
-	Kscale = 0;
 	state = Initial;
 }
 
@@ -131,6 +130,21 @@ Eigen::Affine3d Backend::cameraToTransform(const Mat& C, double scale)
 	0.0, 0.0, 0.0, 1.0;
 
 	return Eigen::Affine3d(Tm).inverse();
+}
+
+Mat Backend::transformToCamera(const Eigen::Affine3d& T)
+{
+	Eigen::Affine3d Tinv = T.inverse();
+
+	Eigen::Matrix3d R = Tinv.rotation();
+	Eigen::Vector3d t = Tinv.translation();
+
+	Mat C = (Mat_<double>(3, 4) <<  //
+				R(0, 0), R(0, 1), R(0, 2), t(0), //
+	R(1, 0), R(1, 1), R(1, 2), t(1), //
+	R(2, 0), R(2, 1), R(2, 2), t(2));
+
+	return C;
 }
 
 bool Backend::sufficientDelta(double deltaFeatures)

@@ -57,15 +57,11 @@ public:
 	inline void setCameraPose(Eigen::Affine3d& T_WC)
 	{
 		this->T_WC = T_WC;
-		Fpoints = T_WC;
 	}
 
 	inline void setK(const cv::Matx33d& K)
 	{
 		this->K = K;
-		double fx = K(0, 0);
-		double fy = K(1, 1);
-		Kscale = (fx + fy) / 2;
 	}
 
 	inline State getState() const
@@ -87,6 +83,7 @@ protected:
 	bool sufficientDelta(double deltaFeatures);
 
 	Eigen::Affine3d cameraToTransform(const cv::Mat& C, double scale = 1.0);
+	cv::Mat transformToCamera(const Eigen::Affine3d& T);
 
 	double getCorrespondecesAndDelta(Features2D& oldFeatures,
 				Features2D& newFeatures, Features2D& oldCF, Features2D& newCF);
@@ -101,8 +98,8 @@ protected:
 				Features2D& newFeaturesNorm, std::vector<unsigned char>& mask);
 
 protected:
+	//Camera matrix
 	cv::Matx33d K;
-	double Kscale;
 
 	//Tracking status
 	State state;

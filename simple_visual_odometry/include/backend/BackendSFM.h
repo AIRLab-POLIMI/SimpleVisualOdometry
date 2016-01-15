@@ -36,6 +36,7 @@ public:
 private:
 	void getCorrespondences(const Features2D& trackedFeatures, Features2D& features2D, Features3D& features3D);
 
+	void computeInitialCameras(cv::Mat C, cv::Mat& C0, cv::Mat& C1);
 
 	cv::Mat rodriguesFromPose(const Eigen::Affine3d& T);
 	cv::Mat translationFromPose(const Eigen::Affine3d& T);

@@ -25,7 +25,10 @@
 
 BackendSFM::BackendSFM()
 {
+	Eigen::Quaterniond q_RC(-0.5, 0.5, -0.5, 0.5);
 
+	Fpoints.setIdentity();
+	Fpoints.rotate(q_RC);
 }
 
 Eigen::Affine3d BackendSFM::computePose(Features2D& trackedFeatures,
@@ -71,22 +74,42 @@ Eigen::Affine3d BackendSFM::computePose(Features2D& trackedFeatures,
 
 				if (sufficientDelta(deltaMean))
 				{
+					//compute transform
 					vector<unsigned char> mask;
 					Mat C = recoverCameraFromEssential(oldCorrespondences,
 								newCorrespondences, mask);
 
+					//compute absolute cameras
+					cv::Mat C0, C1;
+					computeInitialCameras(C, C0, C1);
+
+					std::cout << "C0" << std::endl;
+					std::cout << C0 << std::endl;
+					std::cout << "C1" << std::endl;
+					std::cout << C1 << std::endl;
+					std::cout << "C" << std::endl;
+					std::cout << C << std::endl;
+
+					//triangulate
 					Features3D&& triangulated = triangulate(oldCorrespondences,
-								newCorrespondences, mask, C);
+								newCorrespondences, mask, C1, C0);
 
 					//Save points
 					old3DPoints = triangulated;
 					new3DPoints = triangulated;
 
-					//Compute transform
-					Eigen::Affine3d T = cameraToTransform(C);
+					std::cout << "T_C0W" << std::endl;
+					std::cout << T_WC.inverse().matrix() << std::endl;
 
 					//Compute new pose
-					T_WC = T_WC * T;
+					T_WC = cameraToTransform(C1);
+
+					std::cout << "T_C1W" << std::endl;
+					std::cout << T_WC.inverse().matrix() << std::endl;
+
+
+					std::cout << "T" << std::endl;
+					std::cout << cameraToTransform(C).inverse().matrix() << std::endl;
 
 					//Update state
 					state = Tracking;
@@ -108,14 +131,14 @@ Eigen::Affine3d BackendSFM::computePose(Features2D& trackedFeatures,
 				cv::Mat rvec = rodriguesFromPose(T_CW);
 				cv::Mat tvec = translationFromPose(T_CW);
 
-				/*vector<unsigned char> mask;
+				vector<unsigned char> mask;
 
 				solvePnPRansac(features3D.getPoints(), features2D.getPoints(),
-							K, Mat(), rvec, tvec, true, 100, 8.0,
-							0.9 * features2D.size(), mask, CV_ITERATIVE);*/
+							K, Mat(), rvec, tvec, true, 300, 1.0,
+							0.9 * features2D.size(), mask, CV_ITERATIVE);
 
-				solvePnP(features3D.getPoints(), features2D.getPoints(),
-											K, Mat(), rvec, tvec, true, CV_ITERATIVE);
+				/*solvePnP(features3D.getPoints(), features2D.getPoints(),
+											K, Mat(), rvec, tvec, true, CV_ITERATIVE);*/
 
 				cv::Mat C = computeCameraMatrix(rvec, tvec);
 
@@ -169,6 +192,16 @@ void BackendSFM::getCorrespondences(const Features2D& trackedFeatures,
 			features3D.addPoint(old3DPoints[index], id);
 		}
 	}
+}
+
+void BackendSFM::computeInitialCameras(cv::Mat C, cv::Mat& C0, cv::Mat& C1)
+{
+	Eigen::Affine3d T = cameraToTransform(C);
+
+	Eigen::Affine3d T_WC1 = T_WC*T;
+
+	C0 = transformToCamera(T_WC);
+	C1 = transformToCamera(T_WC1);
 }
 
 cv::Mat BackendSFM::rodriguesFromPose(const Eigen::Affine3d& T)
