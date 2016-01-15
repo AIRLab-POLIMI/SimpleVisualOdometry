@@ -25,10 +25,10 @@
 
 BackendSFM::BackendSFM()
 {
-	Eigen::Quaterniond q_RC(-0.5, 0.5, -0.5, 0.5);
+	//Eigen::Quaterniond q_CR(0.5, 0.5, -0.5, 0.5);
 
 	Fpoints.setIdentity();
-	Fpoints.rotate(q_RC);
+	//Fpoints.rotate(q_CR);
 }
 
 Eigen::Affine3d BackendSFM::computePose(Features2D& trackedFeatures,
@@ -83,13 +83,6 @@ Eigen::Affine3d BackendSFM::computePose(Features2D& trackedFeatures,
 					cv::Mat C0, C1;
 					computeInitialCameras(C, C0, C1);
 
-					std::cout << "C0" << std::endl;
-					std::cout << C0 << std::endl;
-					std::cout << "C1" << std::endl;
-					std::cout << C1 << std::endl;
-					std::cout << "C" << std::endl;
-					std::cout << C << std::endl;
-
 					//triangulate
 					Features3D&& triangulated = triangulate(oldCorrespondences,
 								newCorrespondences, mask, C1, C0);
@@ -98,18 +91,8 @@ Eigen::Affine3d BackendSFM::computePose(Features2D& trackedFeatures,
 					old3DPoints = triangulated;
 					new3DPoints = triangulated;
 
-					std::cout << "T_C0W" << std::endl;
-					std::cout << T_WC.inverse().matrix() << std::endl;
-
 					//Compute new pose
 					T_WC = cameraToTransform(C1);
-
-					std::cout << "T_C1W" << std::endl;
-					std::cout << T_WC.inverse().matrix() << std::endl;
-
-
-					std::cout << "T" << std::endl;
-					std::cout << cameraToTransform(C).inverse().matrix() << std::endl;
 
 					//Update state
 					state = Tracking;
