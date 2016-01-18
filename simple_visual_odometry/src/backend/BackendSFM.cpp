@@ -23,20 +23,20 @@
 
 #include "backend/BackendSFM.h"
 
+#include "core/utils.h"
 BackendSFM::BackendSFM()
 {
-	//Eigen::Quaterniond q_CR(0.5, 0.5, -0.5, 0.5);
-
 	Fpoints.setIdentity();
-	//Fpoints.rotate(q_CR);
 }
 
 Eigen::Affine3d BackendSFM::computePose(Features2D& trackedFeatures,
 			Features2D& newFeatures)
 {
-
 	try
 	{
+		//Clear new points
+		new3DPoints = Features3D();
+
 		switch (state)
 		{
 			case Initial:
@@ -55,7 +55,7 @@ Eigen::Affine3d BackendSFM::computePose(Features2D& trackedFeatures,
 				}
 			}
 
-			break;
+				break;
 
 			case Initializing:
 			{
@@ -94,6 +94,13 @@ Eigen::Affine3d BackendSFM::computePose(Features2D& trackedFeatures,
 					//Compute new pose
 					T_WC = cameraToTransform(C1);
 
+					//Save new features in candidate list
+					if(newFeatures.size() > 0)
+					{
+						Candidates candidate(C, T_WC, newFeatures);
+						candidates.push_front(candidate);
+					}
+
 					//Update state
 					state = Tracking;
 					std::cout << "Tracking" << std::endl;
@@ -101,7 +108,7 @@ Eigen::Affine3d BackendSFM::computePose(Features2D& trackedFeatures,
 
 			}
 
-			break;
+				break;
 
 			case Tracking:
 			{
@@ -114,25 +121,84 @@ Eigen::Affine3d BackendSFM::computePose(Features2D& trackedFeatures,
 				cv::Mat rvec = rodriguesFromPose(T_CW);
 				cv::Mat tvec = translationFromPose(T_CW);
 
-				vector<unsigned char> mask;
+				/*vector<unsigned char> mask;
 
 				solvePnPRansac(features3D.getPoints(), features2D.getPoints(),
 							K, Mat(), rvec, tvec, true, 300, 1.0,
 							0.9 * features2D.size(), mask, CV_ITERATIVE);
+				std::cout << "inliers: " << countInlier(mask) << std::endl;*/
 
-				/*solvePnP(features3D.getPoints(), features2D.getPoints(),
-											K, Mat(), rvec, tvec, true, CV_ITERATIVE);*/
+				solvePnP(features3D.getPoints(), features2D.getPoints(),
+							K, Mat(), rvec, tvec, true);
+
+
 
 				cv::Mat C = computeCameraMatrix(rvec, tvec);
 
-				//Compute structure
-
-
 				//Compute new pose
 				T_WC = cameraToTransform(C);
+
+				//Compute structure
+				std::cout << "Candidates " << candidates.size() <<std::endl;
+
+				auto it = candidates.begin();
+				while (it != candidates.end())
+				{
+					//get candidate
+					auto& candidate = *it;
+
+					//get translation between frames
+					Eigen::Vector3d tf = candidate.F.translation();
+					Eigen::Vector3d tc = T_WC.translation();
+
+					if ((tf - tc).norm() > 5.0)
+					{
+
+						// Find correspondences
+						Features2D oldCorrespondences;
+						Features2D newCorrespondences;
+						getCorrespondecesAndDelta(candidate.features,
+									trackedFeatures, oldCorrespondences,
+									newCorrespondences);
+
+						vector<unsigned char> fakeMask(oldCorrespondences.size(), 1);
+						//Triangulate correspondent features
+						if(oldCorrespondences.size() > 0)
+						{
+							Features3D&& triangulated = triangulate(
+										oldCorrespondences, newCorrespondences,
+										fakeMask, C, candidate.C);
+
+
+							//Add 3d points to new points set
+							new3DPoints.addPoints(triangulated);
+
+							std::cout << "Triangulated " << triangulated.size() << " points" <<std::endl;
+						}
+
+						//Erase processed candidate
+						it = candidates.erase(it);
+					}
+					else
+					{
+						//Update iterator
+						it++;
+					}
+				}
+
+				//Add triangulated points to points set
+				old3DPoints.addPoints(new3DPoints);
+
+				//Save new features in candidate list
+				if(newFeatures.size() > 0)
+				{
+					Candidates candidate(C, T_WC, newFeatures);
+					candidates.push_back(candidate);
+				}
+
 			}
 
-			break;
+				break;
 
 			default:
 				break;
@@ -181,7 +247,7 @@ void BackendSFM::computeInitialCameras(cv::Mat C, cv::Mat& C0, cv::Mat& C1)
 {
 	Eigen::Affine3d T = cameraToTransform(C);
 
-	Eigen::Affine3d T_WC1 = T_WC*T;
+	Eigen::Affine3d T_WC1 = T_WC * T;
 
 	C0 = transformToCamera(T_WC);
 	C1 = transformToCamera(T_WC1);

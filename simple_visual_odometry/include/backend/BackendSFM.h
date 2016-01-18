@@ -26,6 +26,8 @@
 
 #include "Backend.h"
 
+#include <list>
+
 class BackendSFM: public Backend
 {
 public:
@@ -43,10 +45,28 @@ private:
 	cv::Mat computeCameraMatrix(const cv::Mat& rodrigues, const cv::Mat& t);
 
 private:
+	struct Candidates
+	{
+		Candidates(const cv::Mat& C,
+				   const Eigen::Affine3d F,
+				   const Features2D& features) : C(C), F(F), features(features)
+		{
+
+		}
+
+		cv::Mat C;
+		Eigen::Affine3d F;
+		Features2D features;
+	};
+
+	typedef std::list<Candidates> CandidatesList;
+
+private:
 	//Features data
 	Features2D oldFeatures;
 	Features3D old3DPoints;
 	Features3D new3DPoints;
+	CandidatesList candidates;
 
 private:
 	static const unsigned int minInitialFeatures = 100;

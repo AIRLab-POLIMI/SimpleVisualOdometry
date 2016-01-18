@@ -26,8 +26,6 @@
 
 #include <vector>
 
-using namespace std;
-
 inline std::ostream& operator<<(std::ostream& os,
 			const std::vector<unsigned char>& v)
 {
@@ -40,6 +38,19 @@ inline std::ostream& operator<<(std::ostream& os,
 		os << v[i];
 	}
 	return os;
+}
+
+inline unsigned int countInlier(const std::vector<unsigned char>& v)
+{
+	unsigned int count = 0;
+	for(auto c : v)
+	{
+		if(c != 0)
+			count++;
+	}
+
+	return count;
+
 }
 
 #endif /* INCLUDE_UTILS_H_ */
