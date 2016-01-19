@@ -77,9 +77,6 @@ Features3D Backend::triangulate(Features2D& oldFeatures,
 	Mat K = Mat(this->K);
 	triangulatePoints(K * C0, K * C, oldFeatures.getPoints(), newFeatures.getPoints(), points4D);
 
-	/*triangulatePoints(K * C0, K * C, oldFeatures.getPoints(),
-	 newFeatures.getPoints(), points4D);*/
-
 	for (unsigned int i = 0; i < points4D.cols; i++)
 	{
 		Vec4d point4d = points4D.col(i);

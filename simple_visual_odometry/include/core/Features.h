@@ -53,6 +53,19 @@ public:
 
 	}
 
+	Features(Features<Type>& oldFeatures, std::vector<Type> newPoints)
+	{
+		unsigned int j = 0;
+		for (unsigned int i = 0; i < oldFeatures.size(); i++)
+		{
+			unsigned int id_j = oldFeatures.getId(i);
+			ids.push_back(id_j);
+			indexes[id_j] = j;
+			points.push_back(newPoints[i]);
+			j++;
+		}
+	}
+
 	void addPoint(const Type& point, unsigned int id)
 	{
 		unsigned int index = points.size();

@@ -167,10 +167,18 @@ Eigen::Affine3d BackendSFM::computePose(Features2D& trackedFeatures,
 						if (oldCorrespondences.size() > 0)
 						{
 							Mat E = computeEssential(candidate.F, T_WC);
+							Mat K = Mat(this->K);
+							Mat F = K.t().inv() * E * K.inv();
 
-							Features3D&& triangulated = triangulate(
-										oldCorrespondences, newCorrespondences,
-										C, candidate.C);
+							vector<Point2f> point1, point2;
+							correctMatches(F, oldCorrespondences.getPoints(),
+										newCorrespondences.getPoints(), point1,
+										point2);
+
+							oldCorrespondences = Features2D(oldCorrespondences, point1);
+							newCorrespondences = Features2D(newCorrespondences, point2);
+							Features3D&& triangulated = triangulate(oldCorrespondences,
+										newCorrespondences, C, candidate.C);
 
 							//Add 3d points to new points set
 							new3DPoints.addPoints(triangulated);
