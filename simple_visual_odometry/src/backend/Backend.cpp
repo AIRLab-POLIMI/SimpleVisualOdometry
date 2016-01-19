@@ -69,51 +69,82 @@ double Backend::getCorrespondecesAndDelta(Features2D& oldFeatures,
 }
 
 Features3D Backend::triangulate(Features2D& oldFeatures,
-			Features2D& newFeatures, vector<unsigned char>& mask, Mat C, Mat C0)
+			Features2D& newFeatures, Mat C, Mat C0)
 {
+	Mat points4D(1, oldFeatures.size(), CV_64FC4);
 	Features3D triangulated;
 
-	Mat points4D(1, oldFeatures.size(), CV_64FC4);
-	triangulatePoints(Mat(K) * C0, Mat(K) * C, oldFeatures.getPoints(),
-				newFeatures.getPoints(), points4D);
+	Mat K = Mat(this->K);
+	triangulatePoints(K * C0, K * C, oldFeatures.getPoints(), newFeatures.getPoints(), points4D);
+
+	/*triangulatePoints(K * C0, K * C, oldFeatures.getPoints(),
+	 newFeatures.getPoints(), points4D);*/
 
 	for (unsigned int i = 0; i < points4D.cols; i++)
 	{
-		if (mask[i])
-		{
-			Vec4d point4d = points4D.col(i);
-			point4d = point4d / point4d[3];
-			Point3f point(point4d[0], point4d[1], point4d[2]);
-			triangulated.addPoint(point, oldFeatures.getId(i));
-		}
+		Vec4d point4d = points4D.col(i);
+		point4d = point4d / point4d[3];
+		Point3f point(point4d[0], point4d[1], point4d[2]);
+		triangulated.addPoint(point, oldFeatures.getId(i));
 	}
 
 	return triangulated;
 
 }
 
-Mat Backend::recoverCameraFromEssential(Features2D& oldFeaturesNorm,
-			Features2D& newFeaturesNorm, vector<unsigned char>& mask)
+void Backend::recoverCameraFromEssential(Features2D& oldFeatures,
+			Features2D& newFeatures, vector<unsigned char>& mask, Mat& C,
+			Mat& E)
 {
-	vector<Point2f> points1 = oldFeaturesNorm.getPoints();
-	vector<Point2f> points2 = newFeaturesNorm.getPoints();
+	vector<Point2f> points1 = oldFeatures.getPoints();
+	vector<Point2f> points2 = newFeatures.getPoints();
 
-	Mat E = findEssentialMat(points1, points2, K, FM_RANSAC, 0.999, 0.5, mask);
+	//Compute essential matrix
+	E = findEssentialMat(points1, points2, K, FM_RANSAC, 0.999, 0.5, mask);
+	vector<Point2f> points1Corrected;
+	vector<Point2f> points2Corrected;
+
+	Mat K = Mat(this->K);
+	Mat F = K.t().inv() * E * K.inv();
+	correctMatches(F, points1, points2, points1Corrected, points2Corrected);
 
 	Mat R;
 	Mat t;
 
 	int inliers = countNonZero(mask);
 
-	int newInliers = recoverPose(E, points1, points2, K, R, t, mask);
+	int newInliers = recoverPose(E, points1Corrected, points2Corrected, K, R, t,
+				mask);
 
 	if (newInliers < inliers / 2)
 		throw Backend::low_parallax_exception();
 
-	Mat C;
+	//compute camera matrix
 	hconcat(R, t, C);
 
-	return C;
+	//Update Features
+	oldFeatures = Features2D(oldFeatures, points1Corrected, mask);
+	newFeatures = Features2D(newFeatures, points2Corrected, mask);
+
+}
+
+cv::Mat Backend::computeEssential(const Eigen::Affine3d& T1,
+			const Eigen::Affine3d& T2)
+{
+	Eigen::Affine3d T_CW = T2.inverse() * T1;
+	Eigen::Vector3d t = T_CW.translation();
+	Eigen::Matrix3d R = T_CW.rotation();
+
+	Mat tx;
+	tx = (Mat_<double>(3, 3) << 0, -t(2), t(1), //
+	t(2), 0, -t(0), //
+	-t(1), t(0), 0);
+
+	Mat Rx = (Mat_<double>(3, 3) << R(0, 0), R(0, 1), R(0, 2), //
+	R(1, 0), R(1, 1), R(1, 2), //
+	R(2, 0), R(2, 1), R(2, 2));
+
+	return tx * Rx;
 
 }
 

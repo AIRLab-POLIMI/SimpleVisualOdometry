@@ -133,7 +133,4 @@ private:
 typedef Features<cv::Point2f> Features2D;
 typedef Features<cv::Point3f> Features3D;
 
-typedef Features<cv::Vec2d> Features2Dn;
-typedef Features<cv::Vec3d> Features3Dn;
-
 #endif /* INCLUDE_FEATURES_H_ */

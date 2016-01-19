@@ -91,11 +91,14 @@ protected:
 	cv::Vec2d computeNormalizedPoint(cv::Point2f& point);
 
 	Features3D triangulate(Features2D& oldFeatures, Features2D& newFeatures,
-				std::vector<unsigned char>& mask, cv::Mat C, cv::Mat C0 =
-							cv::Mat::eye(3, 4, CV_64FC1));
+				cv::Mat C, cv::Mat C0 = cv::Mat::eye(3, 4, CV_64FC1));
 
-	cv::Mat recoverCameraFromEssential(Features2D& oldFeaturesNorm,
-				Features2D& newFeaturesNorm, std::vector<unsigned char>& mask);
+	void recoverCameraFromEssential(Features2D& oldFeaturesNorm,
+				Features2D& newFeaturesNorm, std::vector<unsigned char>& mask,
+				cv::Mat& C, cv::Mat& E);
+
+	cv::Mat computeEssential(const Eigen::Affine3d& T1,
+				const Eigen::Affine3d& T2);
 
 protected:
 	//Camera matrix

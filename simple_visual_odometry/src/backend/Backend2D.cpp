@@ -26,7 +26,8 @@
 using namespace std;
 using namespace cv;
 
-Eigen::Affine3d Backend2D::computePose(Features2D& trackedFeatures, Features2D& newFeatures)
+Eigen::Affine3d Backend2D::computePose(Features2D& trackedFeatures,
+			Features2D& newFeatures)
 {
 	//Points frame is last frame
 	Fpoints = T_WC;
@@ -39,7 +40,8 @@ Eigen::Affine3d Backend2D::computePose(Features2D& trackedFeatures, Features2D& 
 			case Initial:
 			case Lost:
 			{
-				if (newFeatures.size() + trackedFeatures.size() > minInitialFeatures)
+				if (newFeatures.size() + trackedFeatures.size()
+							> minInitialFeatures)
 				{
 					//Accept first features
 					oldFeatures = trackedFeatures;
@@ -51,7 +53,7 @@ Eigen::Affine3d Backend2D::computePose(Features2D& trackedFeatures, Features2D& 
 				}
 			}
 
-			break;
+				break;
 
 			case Initializing:
 			case Tracking:
@@ -63,7 +65,8 @@ Eigen::Affine3d Backend2D::computePose(Features2D& trackedFeatures, Features2D& 
 				Features2D newCorrespondences;
 
 				double deltaMean = getCorrespondecesAndDelta(oldFeatures,
-							trackedFeatures, oldCorrespondences, newCorrespondences);
+							trackedFeatures, oldCorrespondences,
+							newCorrespondences);
 
 				if (oldCorrespondences.size() < minFeatures)
 					throw Backend::no_points_exception();
@@ -71,11 +74,13 @@ Eigen::Affine3d Backend2D::computePose(Features2D& trackedFeatures, Features2D& 
 				if (sufficientDelta(deltaMean))
 				{
 					vector<unsigned char> mask;
-					Mat C = recoverCameraFromEssential(oldCorrespondences,
-								newCorrespondences, mask);
+					cv::Mat C;
+					cv::Mat E;
+					recoverCameraFromEssential(oldCorrespondences,
+								newCorrespondences, mask, C, E);
 
 					Features3D&& triangulated = triangulate(oldCorrespondences,
-								newCorrespondences, mask, C);
+								newCorrespondences, C);
 
 					double scale = 1.0;
 
@@ -104,7 +109,7 @@ Eigen::Affine3d Backend2D::computePose(Features2D& trackedFeatures, Features2D& 
 
 			}
 
-			break;
+				break;
 
 			default:
 				break;
