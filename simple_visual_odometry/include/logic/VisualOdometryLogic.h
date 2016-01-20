@@ -46,7 +46,8 @@
 class VisualOdometryLogic
 {
 public:
-	VisualOdometryLogic(std::string imageTopic, ros::NodeHandle& n);
+	VisualOdometryLogic(VisualFrontend& frontend, Backend& backend,
+				std::string imageTopic, ros::NodeHandle& n);
 	virtual void handleImage(const sensor_msgs::ImageConstPtr& msg,
 				const sensor_msgs::CameraInfoConstPtr& info_msg);
 	bool getImage(const sensor_msgs::ImageConstPtr& msg,
@@ -80,13 +81,12 @@ private:
 	tf2_ros::Buffer tfBuffer;
 	tf2_ros::TransformListener tfListener;
 
-
 private:
 	//Visual Frontend
-	VisualFrontend frontend;
+	VisualFrontend& frontend;
 
 	//Localization Backend
-	Backend* backend;
+	Backend& backend;
 
 	//config
 	ConfigManager config;
@@ -105,7 +105,6 @@ private:
 
 	//debug display
 	std::string src_window;
-
 
 };
 

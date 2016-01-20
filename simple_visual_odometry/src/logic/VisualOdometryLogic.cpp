@@ -37,8 +37,10 @@ namespace enc = sensor_msgs::image_encodings;
 using namespace cv;
 using namespace std;
 
-VisualOdometryLogic::VisualOdometryLogic(string imageTopic, ros::NodeHandle& n) :
-			it(n), trajectoryPublisher("camera"), gtTrajectoryPublisher("gt"),
+VisualOdometryLogic::VisualOdometryLogic(VisualFrontend& frontend,
+			Backend& backend, string imageTopic, ros::NodeHandle& n) :
+			frontend(frontend), backend(backend), it(n),
+			trajectoryPublisher("camera"), gtTrajectoryPublisher("gt"),
 			tfListener(tfBuffer)
 {
 	imageSubscriber = it.subscribeCamera(imageTopic + "image_rect_color", 1,
@@ -63,9 +65,7 @@ VisualOdometryLogic::VisualOdometryLogic(string imageTopic, ros::NodeHandle& n) 
 	namedWindow(src_window, CV_WINDOW_AUTOSIZE);
 
 	//Init Backend
-	backend = new Backend2D();
-	//backend = new BackendSFM();
-	backend->setCameraPose(T_WC);
+	backend.setCameraPose(T_WC);
 
 }
 
@@ -143,13 +143,14 @@ void VisualOdometryLogic::trackPose(
 	//Compute Camera Pose
 	Matx34d P = cameraModel.fullProjectionMatrix();
 	Matx33d K = P.get_minor<3, 3>(0, 0);
-	backend->setK(K);
-	T_WC = backend->computePose(trackedFeatures, newFeatures);
+	backend.setK(K);
+	T_WC = backend.computePose(trackedFeatures, newFeatures);
 
 	Eigen::Affine3d T_WR = T_WC * T_CR;
 
 	//Publish features
-	featurespublisher.publishFeatureMarkers(backend->getFeatures(), backend->getPointsFrame());
+	featurespublisher.publishFeatureMarkers(backend.getFeatures(),
+				backend.getPointsFrame());
 
 	//Send Transform
 	publishEigenTransform(info_msg->header.stamp, "world",

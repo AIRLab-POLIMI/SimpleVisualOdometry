@@ -23,6 +23,9 @@
 
 #include "logic/VisualOdometryLogic.h"
 
+#include "backend/BackendSFM.h"
+#include "backend/Backend2D.h"
+
 
 int main(int argc, char *argv[])
 {
@@ -37,7 +40,12 @@ int main(int argc, char *argv[])
 	ros::NodeHandle n;
 	string imageTopic = argv[1];
 
-	VisualOdometryLogic logic(imageTopic, n);
+	//Backend2D backend;
+	BackendSFM backend;
+
+	VisualFrontend frontend;
+
+	VisualOdometryLogic logic(frontend, backend, imageTopic, n);
 
 	ROS_INFO("Visual Odometry node started");
 
