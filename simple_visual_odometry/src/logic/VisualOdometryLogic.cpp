@@ -63,8 +63,8 @@ VisualOdometryLogic::VisualOdometryLogic(string imageTopic, ros::NodeHandle& n) 
 	namedWindow(src_window, CV_WINDOW_AUTOSIZE);
 
 	//Init Backend
-	//backend = new Backend2D();
-	backend = new BackendSFM();
+	backend = new Backend2D();
+	//backend = new BackendSFM();
 	backend->setCameraPose(T_WC);
 
 }

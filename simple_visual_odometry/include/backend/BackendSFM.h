@@ -32,8 +32,17 @@ class BackendSFM: public Backend
 {
 public:
 	BackendSFM();
-	virtual Eigen::Affine3d computePose(Features2D& trackedFeatures, Features2D& newFeatures) override;
 	virtual Features3D getFeatures() const override;
+
+
+protected:
+	virtual void prelude() override;
+
+	virtual void startup(Features2D& trackedFeatures, Features2D& newFeatures) override;
+	virtual void initialization(Features2D& trackedFeatures,
+				Features2D& newFeatures) override;
+	virtual void tracking(Features2D& trackedFeatures, Features2D& newFeatures) override;
+	virtual void recovery(Features2D& trackedFeatures, Features2D& newFeatures) override;
 
 private:
 	void getCorrespondences(const Features2D& trackedFeatures, Features2D& features2D, Features3D& features3D);

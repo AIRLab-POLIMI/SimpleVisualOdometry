@@ -26,111 +26,92 @@
 using namespace std;
 using namespace cv;
 
-Eigen::Affine3d Backend2D::computePose(Features2D& trackedFeatures,
-			Features2D& newFeatures)
+void Backend2D::prelude()
 {
 	//Points frame is last frame
 	Fpoints = T_WC;
+}
 
-	try
+void Backend2D::startup(Features2D& trackedFeatures, Features2D& newFeatures)
+{
+	if (newFeatures.size() + trackedFeatures.size() > minInitialFeatures)
 	{
-
-		switch (state)
-		{
-			case Initial:
-			case Lost:
-			{
-				if (newFeatures.size() + trackedFeatures.size()
-							> minInitialFeatures)
-				{
-					//Accept first features
-					oldFeatures = trackedFeatures;
-					oldFeatures.addPoints(newFeatures);
-
-					//Update state
-					state = Initializing;
-					std::cout << "Initializing" << std::endl;
-				}
-			}
-
-				break;
-
-			case Initializing:
-			case Tracking:
-			{
-				if (trackedFeatures.size() < minFeatures)
-					throw Backend::no_points_exception();
-
-				Features2D oldCorrespondences;
-				Features2D newCorrespondences;
-
-				double deltaMean = getCorrespondecesAndDelta(oldFeatures,
-							trackedFeatures, oldCorrespondences,
-							newCorrespondences);
-
-				if (oldCorrespondences.size() < minFeatures)
-					throw Backend::no_points_exception();
-
-				if (sufficientDelta(deltaMean))
-				{
-					vector<unsigned char> mask;
-					cv::Mat C;
-					cv::Mat E;
-					recoverCameraFromEssential(oldCorrespondences,
-								newCorrespondences, mask, C, E);
-
-					Features3D&& triangulated = triangulate(oldCorrespondences,
-								newCorrespondences, C);
-
-					double scale = 1.0;
-
-					if (state != Initializing)
-					{
-						scale = estimateScale(triangulated);
-					}
-
-					//Compute transform
-					Eigen::Affine3d T = cameraToTransform(C, scale);
-
-					//Compute new pose
-					T_WC = T_WC * T;
-
-					//Save 3d points
-					old3DPoints = triangulated;
-					old3DPoints.scalePoints(scale);
-
-					//Save current features
-					oldFeatures = trackedFeatures;
-					oldFeatures.addPoints(newFeatures);
-
-					//Update state
-					state = Tracking;
-				}
-
-			}
-
-				break;
-
-			default:
-				break;
-		}
-
-	}
-	catch (Backend::low_parallax_exception& e)
-	{
-
-	}
-	catch (Backend::no_points_exception& e)
-	{
-		std::cout << "Lost" << std::endl;
-		old3DPoints = Features3D();
+		//Accept first features
+		oldFeatures = trackedFeatures;
+		oldFeatures.addPoints(newFeatures);
 
 		//Update state
-		state = Lost;
+		state = Initializing;
+		std::cout << "Initializing" << std::endl;
 	}
+}
 
-	return T_WC;
+void Backend2D::initialization(Features2D& trackedFeatures,
+			Features2D& newFeatures)
+{
+	tracking(trackedFeatures, newFeatures);
+}
 
+void Backend2D::tracking(Features2D& trackedFeatures, Features2D& newFeatures)
+{
+	if (trackedFeatures.size() < minFeatures)
+		throw Backend::no_points_exception();
+
+	Features2D oldCorrespondences;
+	Features2D newCorrespondences;
+
+	double deltaMean = getCorrespondecesAndDelta(oldFeatures, trackedFeatures,
+				oldCorrespondences, newCorrespondences);
+
+	if (oldCorrespondences.size() < minFeatures)
+		throw Backend::no_points_exception();
+
+	if (sufficientDelta(deltaMean))
+	{
+		vector<unsigned char> mask;
+		cv::Mat C;
+		cv::Mat E;
+		recoverCameraFromEssential(oldCorrespondences, newCorrespondences, mask,
+					C, E);
+
+		Features3D&& triangulated = triangulate(oldCorrespondences,
+					newCorrespondences, C);
+
+		double scale = 1.0;
+
+		if (state != Initializing)
+		{
+			scale = estimateScale(triangulated);
+		}
+
+		//Compute transform
+		Eigen::Affine3d T = cameraToTransform(C, scale);
+
+		//Compute new pose
+		T_WC = T_WC * T;
+
+		//Save 3d points
+		old3DPoints = triangulated;
+		old3DPoints.scalePoints(scale);
+
+		//Save current features
+		oldFeatures = trackedFeatures;
+		oldFeatures.addPoints(newFeatures);
+
+		//Update state
+		state = Tracking;
+	}
+}
+
+void Backend2D::recovery(Features2D& trackedFeatures, Features2D& newFeatures)
+{
+	startup(trackedFeatures, newFeatures);
+}
+
+void Backend2D::lostExceptionHandler()
+{
+	old3DPoints = Features3D();
+	Backend::lostExceptionHandler();
 }
 
 Features3D Backend2D::getFeatures() const

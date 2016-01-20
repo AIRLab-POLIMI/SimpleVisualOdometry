@@ -29,9 +29,18 @@
 class Backend2D: public Backend
 {
 public:
-	virtual Eigen::Affine3d computePose(Features2D& trackedFeatures, Features2D& newFeatures) override;
-
 	virtual Features3D getFeatures() const override;
+
+protected:
+	virtual void prelude() override;
+
+	virtual void startup(Features2D& trackedFeatures, Features2D& newFeatures) override;
+	virtual void initialization(Features2D& trackedFeatures,
+				Features2D& newFeatures) override;
+	virtual void tracking(Features2D& trackedFeatures, Features2D& newFeatures) override;
+	virtual void recovery(Features2D& trackedFeatures, Features2D& newFeatures) override;
+
+	virtual void lostExceptionHandler() override;
 
 private:
 	double estimateScale(Features3D& new3DPoints);

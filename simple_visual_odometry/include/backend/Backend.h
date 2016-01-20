@@ -50,8 +50,8 @@ public:
 public:
 	Backend();
 
-	virtual Eigen::Affine3d computePose(Features2D& trackedFeatures,
-				Features2D& newFeatures) = 0;
+	Eigen::Affine3d computePose(Features2D& trackedFeatures, Features2D& newFeatures);
+
 	virtual Features3D getFeatures() const = 0;
 
 	inline void setCameraPose(Eigen::Affine3d& T_WC)
@@ -78,6 +78,18 @@ public:
 	{
 
 	}
+
+protected:
+	virtual void prelude() = 0;
+
+	virtual void startup(Features2D& trackedFeatures, Features2D& newFeatures) = 0;
+	virtual void initialization(Features2D& trackedFeatures,
+				Features2D& newFeatures) = 0;
+	virtual void tracking(Features2D& trackedFeatures, Features2D& newFeatures) = 0;
+	virtual void recovery(Features2D& trackedFeatures, Features2D& newFeatures) = 0;
+
+	virtual void lostExceptionHandler();
+	virtual void lowParalalxHandler();
 
 protected:
 	bool sufficientDelta(double deltaFeatures);

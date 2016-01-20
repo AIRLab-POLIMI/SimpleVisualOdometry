@@ -31,6 +31,63 @@ Backend::Backend()
 	state = Initial;
 }
 
+Eigen::Affine3d Backend::computePose(Features2D& trackedFeatures,
+			Features2D& newFeatures)
+{
+
+		prelude();
+
+		try
+		{
+			switch (state)
+			{
+				case Initial:
+					startup(trackedFeatures, newFeatures);
+					break;
+
+				case Initializing:
+					initialization(trackedFeatures, newFeatures);
+					break;
+
+				case Tracking:
+					tracking(trackedFeatures, newFeatures);
+					break;
+
+				case Lost:
+					recovery(trackedFeatures, newFeatures);
+					break;
+
+				default:
+					break;
+
+			}
+		}
+		catch (Backend::low_parallax_exception& e)
+		{
+			lowParalalxHandler();
+		}
+		catch (Backend::no_points_exception& e)
+		{
+			lostExceptionHandler();
+		}
+
+		return T_WC;
+
+}
+
+void Backend::lostExceptionHandler()
+{
+	std::cout << "Lost" << std::endl;
+
+	//Update state
+	state = Lost;
+}
+
+void Backend::lowParalalxHandler()
+{
+
+}
+
 Vec2d Backend::computeNormalizedPoint(Point2f& point)
 {
 	double fx = K(0, 0);
@@ -75,7 +132,8 @@ Features3D Backend::triangulate(Features2D& oldFeatures,
 	Features3D triangulated;
 
 	Mat K = Mat(this->K);
-	triangulatePoints(K * C0, K * C, oldFeatures.getPoints(), newFeatures.getPoints(), points4D);
+	triangulatePoints(K * C0, K * C, oldFeatures.getPoints(),
+				newFeatures.getPoints(), points4D);
 
 	for (unsigned int i = 0; i < points4D.cols; i++)
 	{
