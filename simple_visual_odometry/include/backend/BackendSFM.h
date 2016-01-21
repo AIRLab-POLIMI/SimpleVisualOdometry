@@ -34,20 +34,27 @@ public:
 	BackendSFM();
 	virtual Features3D getFeatures() const override;
 
-
 protected:
 	virtual void prelude() override;
 
-	virtual void startup(Features2D& trackedFeatures, Features2D& newFeatures) override;
+	virtual void startup(Features2D& trackedFeatures, Features2D& newFeatures)
+				override;
 	virtual void initialization(Features2D& trackedFeatures,
 				Features2D& newFeatures) override;
-	virtual void tracking(Features2D& trackedFeatures, Features2D& newFeatures) override;
-	virtual void recovery(Features2D& trackedFeatures, Features2D& newFeatures) override;
+	virtual void tracking(Features2D& trackedFeatures, Features2D& newFeatures)
+				override;
+	virtual void recovery(Features2D& trackedFeatures, Features2D& newFeatures)
+				override;
 
 private:
-	void getCorrespondences(const Features2D& trackedFeatures, Features2D& features2D, Features3D& features3D);
+	void getCorrespondences(const Features2D& trackedFeatures,
+				Features2D& features2D, Features3D& features3D);
 
 	void computeInitialCameras(cv::Mat C, cv::Mat& C0, cv::Mat& C1);
+
+	void cheiralityCheck(const Eigen::Affine3d& T1, const Eigen::Affine3d& T2,
+				const Features3D& triangulated,
+				std::vector<unsigned char>& mask);
 
 	cv::Mat rodriguesFromPose(const Eigen::Affine3d& T);
 	cv::Mat translationFromPose(const Eigen::Affine3d& T);
@@ -56,9 +63,9 @@ private:
 private:
 	struct Candidates
 	{
-		Candidates(const cv::Mat& C,
-				   const Eigen::Affine3d F,
-				   const Features2D& features) : C(C), F(F), features(features)
+		Candidates(const cv::Mat& C, const Eigen::Affine3d F,
+					const Features2D& features) :
+					C(C), F(F), features(features)
 		{
 
 		}
@@ -82,7 +89,5 @@ private:
 	static const unsigned int minFeatures = 10;
 
 };
-
-
 
 #endif /* INCLUDE_BACKENDSFM_H_ */

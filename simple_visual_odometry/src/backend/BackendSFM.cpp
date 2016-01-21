@@ -106,8 +106,7 @@ void BackendSFM::initialization(Features2D& trackedFeatures,
 	}
 }
 
-void BackendSFM::tracking(Features2D& trackedFeatures,
-			Features2D& newFeatures)
+void BackendSFM::tracking(Features2D& trackedFeatures, Features2D& newFeatures)
 {
 	//Compute motion
 	Features2D features2D;
@@ -118,15 +117,50 @@ void BackendSFM::tracking(Features2D& trackedFeatures,
 	cv::Mat rvec = rodriguesFromPose(T_CW);
 	cv::Mat tvec = translationFromPose(T_CW);
 
-	/*vector<unsigned char> mask;
+	vector<unsigned char> mask(features3D.size());
 
-	solvePnPRansac(features3D.getPoints(), features2D.getPoints(), K, Mat(),
+	std::cout << "# before: " << std::endl;
+	std::cout << "3d: " << features3D.size() << std::endl;
+	std::cout << "2d: " << features2D.size() << std::endl;
+
+	auto p1 = features3D.getPoints();
+	auto p2 = features2D.getPoints();
+	solvePnPRansac(p1, p2, K, Mat(),
 				rvec, tvec, true, 300, 1.0, 0.9 * features2D.size(), mask,
-				CV_ITERATIVE);
-	std::cout << "inliers: " << countInlier(mask) << std::endl;*/
+				CV_P3P);
 
-	solvePnP(features3D.getPoints(), features2D.getPoints(), K, Mat(), rvec,
-				tvec, true);
+	std::cout << "# after ransac: " << std::endl;
+	std::cout << "3d: " << features3D.size() << std::endl;
+	std::cout << "2d: " << features2D.size() << std::endl;
+	std::cout << "inliers: " << countInlier(mask) << std::endl;
+
+	std:: cout << "# Inside constructor 3D" << std::endl;
+	features3D = Features3D(features3D, features3D.getPoints(), mask);
+	std:: cout << "# Inside constructor 2D" << std::endl;
+	features2D = Features2D(features2D, features2D.getPoints(), mask);
+
+	try
+	{
+		std::cout << "# after copy: " << std::endl;
+		std::cout << "3d: " << features3D.size() << std::endl;
+		std::cout << "2d: " << features2D.size() << std::endl;
+		std::cout << "inliers: " << countInlier(mask) << std::endl;
+
+		solvePnP(features3D.getPoints(), features2D.getPoints(), K, Mat(), rvec,
+					tvec, true);
+
+
+	}
+	catch (cv::Exception e)
+	{
+
+		std::cout << "# cv Exception" << std::endl;
+		std::cout << "3d: " << features3D.size() << std::endl;
+		std::cout << "2d: " << features2D.size() << std::endl;
+		std::cout << "inliers: " << countInlier(mask) << std::endl;
+	}
+
+	std::cout << "----------------------------------------------------" << std::endl;
 
 	cv::Mat C = computeCameraMatrix(rvec, tvec);
 
@@ -134,8 +168,6 @@ void BackendSFM::tracking(Features2D& trackedFeatures,
 	T_WC = cameraToTransform(C);
 
 	//Compute structure
-	std::cout << "Candidates " << candidates.size() << std::endl;
-
 	auto it = candidates.begin();
 	while (it != candidates.end())
 	{
@@ -146,7 +178,7 @@ void BackendSFM::tracking(Features2D& trackedFeatures,
 		Eigen::Vector3d tf = candidate.F.translation();
 		Eigen::Vector3d tc = T_WC.translation();
 
-		if ((tf - tc).norm() > 0.5)
+		if ((tf - tc).norm() > 5.0)
 		{
 
 			// Find correspondences
@@ -171,8 +203,14 @@ void BackendSFM::tracking(Features2D& trackedFeatures,
 				Features3D&& triangulated = triangulate(oldCorrespondences,
 							newCorrespondences, C, candidate.C);
 
+				vector<unsigned char> cheiralityMask;
+				cheiralityCheck(T_WC, candidate.F, triangulated,
+							cheiralityMask);
+				std::cout << "inliers " << countInlier(cheiralityMask)
+							<< std::endl;
+
 				//Add 3d points to new points set
-				new3DPoints.addPoints(triangulated);
+				new3DPoints.addPoints(triangulated, cheiralityMask);
 
 				std::cout << "Triangulated " << triangulated.size() << " points"
 							<< std::endl;
@@ -199,10 +237,28 @@ void BackendSFM::tracking(Features2D& trackedFeatures,
 	}
 }
 
-void BackendSFM::recovery(Features2D& trackedFeatures,
-			Features2D& newFeatures)
+void BackendSFM::recovery(Features2D& trackedFeatures, Features2D& newFeatures)
 {
 	startup(trackedFeatures, newFeatures);
+}
+
+void BackendSFM::cheiralityCheck(const Eigen::Affine3d& T1,
+			const Eigen::Affine3d& T2, const Features3D& triangulated,
+			std::vector<unsigned char>& mask)
+{
+	mask.resize(triangulated.size(), 1);
+
+	for (unsigned int i = 0; i < triangulated.size(); i++)
+	{
+		auto pcv = triangulated[i];
+		Eigen::Vector3d p(pcv.x, pcv.y, pcv.z);
+
+		auto p1 = T1.inverse() * p;
+		auto p2 = T2.inverse() * p;
+
+		if (p1(2) < 0 || p2(2) < 0)
+			mask[i] = 0;
+	}
 }
 
 void BackendSFM::getCorrespondences(const Features2D& trackedFeatures,
