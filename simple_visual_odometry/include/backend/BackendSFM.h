@@ -59,6 +59,8 @@ private:
 	cv::Mat rodriguesFromPose(const Eigen::Affine3d& T);
 	cv::Mat translationFromPose(const Eigen::Affine3d& T);
 	cv::Mat computeCameraMatrix(const cv::Mat& rodrigues, const cv::Mat& t);
+	void computeStructure(const cv::Mat& C, Features2D& trackedFeatures,
+				Features2D& newFeatures);
 
 private:
 	struct Candidates

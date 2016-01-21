@@ -38,9 +38,6 @@ public:
 	Features(Features<Type>& oldFeatures, std::vector<Type> newPoints,
 				std::vector<unsigned char> status)
 	{
-		std::cout << "status size: " <<status.size() << std::endl;
-		std::cout << "newPoints size: " << newPoints.size() << std::endl;
-		std::cout << "oldFeatures size: " << oldFeatures.size() << std::endl;
 		unsigned int j = 0;
 		for (unsigned int i = 0; i < oldFeatures.size(); i++)
 		{
@@ -53,10 +50,20 @@ public:
 				j++;
 			}
 		}
+	}
 
-		std::cout << "inliers " << j << std::endl;
-		std::cout << "points " << points.size() << std::endl;
-
+	Features(Features<Type>& oldFeatures, std::vector<Type> newPoints,
+				std::vector<int> indices)
+	{
+		unsigned int j = 0;
+		for (auto index : indices)
+		{
+			unsigned int id_j = oldFeatures.getId(index);
+			ids.push_back(id_j);
+			indexes[id_j] = j;
+			points.push_back(newPoints[index]);
+			j++;
+		}
 	}
 
 	Features(Features<Type>& oldFeatures, std::vector<Type> newPoints)
@@ -92,7 +99,7 @@ public:
 	{
 		for (unsigned int i = 0; i < features.size(); i++)
 		{
-			if(mask[i])
+			if (mask[i])
 				addPoint(features[i], features.getId(i));
 		}
 	}

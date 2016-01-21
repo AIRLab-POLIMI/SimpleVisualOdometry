@@ -117,50 +117,16 @@ void BackendSFM::tracking(Features2D& trackedFeatures, Features2D& newFeatures)
 	cv::Mat rvec = rodriguesFromPose(T_CW);
 	cv::Mat tvec = translationFromPose(T_CW);
 
-	vector<unsigned char> mask(features3D.size());
 
-	std::cout << "# before: " << std::endl;
-	std::cout << "3d: " << features3D.size() << std::endl;
-	std::cout << "2d: " << features2D.size() << std::endl;
+	/*vector<int> inliers;
+	solvePnPRansac(features3D.getPoints(), features2D.getPoints(), K, Mat(), rvec, tvec, true, 500, 2.0,
+				0.95 * features2D.size(), inliers, CV_ITERATIVE);
 
-	auto p1 = features3D.getPoints();
-	auto p2 = features2D.getPoints();
-	solvePnPRansac(p1, p2, K, Mat(),
-				rvec, tvec, true, 300, 1.0, 0.9 * features2D.size(), mask,
-				CV_P3P);
+	features3D = Features3D(features3D, features3D.getPoints(), inliers);
+	features2D = Features2D(features2D, features2D.getPoints(), inliers);*/
 
-	std::cout << "# after ransac: " << std::endl;
-	std::cout << "3d: " << features3D.size() << std::endl;
-	std::cout << "2d: " << features2D.size() << std::endl;
-	std::cout << "inliers: " << countInlier(mask) << std::endl;
-
-	std:: cout << "# Inside constructor 3D" << std::endl;
-	features3D = Features3D(features3D, features3D.getPoints(), mask);
-	std:: cout << "# Inside constructor 2D" << std::endl;
-	features2D = Features2D(features2D, features2D.getPoints(), mask);
-
-	try
-	{
-		std::cout << "# after copy: " << std::endl;
-		std::cout << "3d: " << features3D.size() << std::endl;
-		std::cout << "2d: " << features2D.size() << std::endl;
-		std::cout << "inliers: " << countInlier(mask) << std::endl;
-
-		solvePnP(features3D.getPoints(), features2D.getPoints(), K, Mat(), rvec,
+	solvePnP(features3D.getPoints(), features2D.getPoints(), K, Mat(), rvec,
 					tvec, true);
-
-
-	}
-	catch (cv::Exception e)
-	{
-
-		std::cout << "# cv Exception" << std::endl;
-		std::cout << "3d: " << features3D.size() << std::endl;
-		std::cout << "2d: " << features2D.size() << std::endl;
-		std::cout << "inliers: " << countInlier(mask) << std::endl;
-	}
-
-	std::cout << "----------------------------------------------------" << std::endl;
 
 	cv::Mat C = computeCameraMatrix(rvec, tvec);
 
@@ -168,54 +134,56 @@ void BackendSFM::tracking(Features2D& trackedFeatures, Features2D& newFeatures)
 	T_WC = cameraToTransform(C);
 
 	//Compute structure
+	computeStructure(C, trackedFeatures, newFeatures);
+}
+
+void BackendSFM::recovery(Features2D& trackedFeatures, Features2D& newFeatures)
+{
+	startup(trackedFeatures, newFeatures);
+}
+
+void BackendSFM::computeStructure(const cv::Mat& C, Features2D& trackedFeatures,
+			Features2D& newFeatures)
+{
+	//Compute structure
 	auto it = candidates.begin();
 	while (it != candidates.end())
 	{
 		//get candidate
 		auto& candidate = *it;
-
 		//get translation between frames
 		Eigen::Vector3d tf = candidate.F.translation();
 		Eigen::Vector3d tc = T_WC.translation();
-
-		if ((tf - tc).norm() > 5.0)
+		if ((tf - tc).norm() > 1.0)
 		{
-
 			// Find correspondences
 			Features2D oldCorrespondences;
 			Features2D newCorrespondences;
 			getCorrespondecesAndDelta(candidate.features, trackedFeatures,
 						oldCorrespondences, newCorrespondences);
-
 			//Triangulate correspondent features
 			if (oldCorrespondences.size() > 0)
 			{
 				Mat E = computeEssential(candidate.F, T_WC);
 				Mat K = Mat(this->K);
 				Mat F = K.t().inv() * E * K.inv();
-
 				vector<Point2f> point1, point2;
 				correctMatches(F, oldCorrespondences.getPoints(),
 							newCorrespondences.getPoints(), point1, point2);
-
 				oldCorrespondences = Features2D(oldCorrespondences, point1);
 				newCorrespondences = Features2D(newCorrespondences, point2);
 				Features3D&& triangulated = triangulate(oldCorrespondences,
 							newCorrespondences, C, candidate.C);
-
 				vector<unsigned char> cheiralityMask;
 				cheiralityCheck(T_WC, candidate.F, triangulated,
 							cheiralityMask);
 				std::cout << "inliers " << countInlier(cheiralityMask)
 							<< std::endl;
-
 				//Add 3d points to new points set
 				new3DPoints.addPoints(triangulated, cheiralityMask);
-
 				std::cout << "Triangulated " << triangulated.size() << " points"
 							<< std::endl;
 			}
-
 			//Erase processed candidate
 			it = candidates.erase(it);
 		}
@@ -225,21 +193,14 @@ void BackendSFM::tracking(Features2D& trackedFeatures, Features2D& newFeatures)
 			it++;
 		}
 	}
-
 	//Add triangulated points to points set
 	old3DPoints.addPoints(new3DPoints);
-
 	//Save new features in candidate list
 	if (newFeatures.size() > 0)
 	{
 		Candidates candidate(C, T_WC, newFeatures);
 		candidates.push_back(candidate);
 	}
-}
-
-void BackendSFM::recovery(Features2D& trackedFeatures, Features2D& newFeatures)
-{
-	startup(trackedFeatures, newFeatures);
 }
 
 void BackendSFM::cheiralityCheck(const Eigen::Affine3d& T1,
