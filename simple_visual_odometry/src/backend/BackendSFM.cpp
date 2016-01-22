@@ -96,8 +96,8 @@ void BackendSFM::initialization(Features2D& trackedFeatures,
 		//Save new features in candidate list
 		if (newFeatures.size() > 0)
 		{
-			Candidates candidate(C, T_WC, newFeatures);
-			candidates.push_front(candidate);
+			KeyFrame candidate(C, T_WC, newFeatures);
+			keyframes.push_front(candidate);
 		}
 
 		//Update state
@@ -117,16 +117,15 @@ void BackendSFM::tracking(Features2D& trackedFeatures, Features2D& newFeatures)
 	cv::Mat rvec = rodriguesFromPose(T_CW);
 	cv::Mat tvec = translationFromPose(T_CW);
 
-
 	/*vector<int> inliers;
-	solvePnPRansac(features3D.getPoints(), features2D.getPoints(), K, Mat(), rvec, tvec, true, 500, 2.0,
-				0.95 * features2D.size(), inliers, CV_ITERATIVE);
+	 solvePnPRansac(features3D.getPoints(), features2D.getPoints(), K, Mat(), rvec, tvec, true, 500, 2.0,
+	 0.95 * features2D.size(), inliers, CV_ITERATIVE);
 
-	features3D = Features3D(features3D, features3D.getPoints(), inliers);
-	features2D = Features2D(features2D, features2D.getPoints(), inliers);*/
+	 features3D = Features3D(features3D, features3D.getPoints(), inliers);
+	 features2D = Features2D(features2D, features2D.getPoints(), inliers);*/
 
 	solvePnP(features3D.getPoints(), features2D.getPoints(), K, Mat(), rvec,
-					tvec, true);
+				tvec, true);
 
 	cv::Mat C = computeCameraMatrix(rvec, tvec);
 
@@ -134,7 +133,10 @@ void BackendSFM::tracking(Features2D& trackedFeatures, Features2D& newFeatures)
 	T_WC = cameraToTransform(C);
 
 	//Compute structure
-	computeStructure(C, trackedFeatures, newFeatures);
+	computeStructure(C, trackedFeatures);
+
+	//Generate keyframes
+	generateKeyframe(C, trackedFeatures, newFeatures);
 }
 
 void BackendSFM::recovery(Features2D& trackedFeatures, Features2D& newFeatures)
@@ -142,50 +144,107 @@ void BackendSFM::recovery(Features2D& trackedFeatures, Features2D& newFeatures)
 	startup(trackedFeatures, newFeatures);
 }
 
-void BackendSFM::computeStructure(const cv::Mat& C, Features2D& trackedFeatures,
+void BackendSFM::generateKeyframe(const cv::Mat& C, Features2D& trackedFeatures,
 			Features2D& newFeatures)
 {
+	const unsigned int minpoints = 20;
+
+	if (toTriangulate.size() > minpoints)
+	{
+		Features2D features;
+
+		//find features to triangulate
+		for(auto id : toTriangulate)
+		{
+			if(trackedFeatures.contains(id))
+			{
+				unsigned int index = trackedFeatures.getIndex(id);
+
+				features.addPoint(trackedFeatures[index], id);
+			}
+
+		}
+
+		//Add new keyframe
+		if(trackedFeatures.size() > minpoints/2)
+		{
+			KeyFrame keyframe(C, T_WC, features);
+			keyframes.push_back(keyframe);
+		}
+
+		//Clear list
+		toTriangulate.clear();
+	}
+
+	// Add new features to next keyframe
+	for (unsigned int i = 0; i < newFeatures.size(); i++)
+		toTriangulate.insert(newFeatures.getId(i));
+
+}
+
+void BackendSFM::generateKeyframe2(const cv::Mat& C,
+			Features2D& trackedFeatures, Features2D& newFeatures)
+{
+	//Save new features in candidate list
+	if (newFeatures.size() > 0)
+	{
+		KeyFrame candidate(C, T_WC, newFeatures);
+		keyframes.push_back(candidate);
+	}
+}
+
+void BackendSFM::computeStructure(const cv::Mat& C, Features2D& trackedFeatures)
+{
 	//Compute structure
-	auto it = candidates.begin();
-	while (it != candidates.end())
+	auto it = keyframes.begin();
+	while (it != keyframes.end())
 	{
 		//get candidate
-		auto& candidate = *it;
+		auto& keyframe = *it;
+
 		//get translation between frames
-		Eigen::Vector3d tf = candidate.F.translation();
+		Eigen::Vector3d tf = keyframe.F.translation();
 		Eigen::Vector3d tc = T_WC.translation();
+
 		if ((tf - tc).norm() > 1.0)
 		{
 			// Find correspondences
 			Features2D oldCorrespondences;
 			Features2D newCorrespondences;
-			getCorrespondecesAndDelta(candidate.features, trackedFeatures,
+			getCorrespondecesAndDelta(keyframe.features, trackedFeatures,
 						oldCorrespondences, newCorrespondences);
 			//Triangulate correspondent features
 			if (oldCorrespondences.size() > 0)
 			{
-				Mat E = computeEssential(candidate.F, T_WC);
+				Mat E = computeEssential(keyframe.F, T_WC);
 				Mat K = Mat(this->K);
 				Mat F = K.t().inv() * E * K.inv();
 				vector<Point2f> point1, point2;
+
 				correctMatches(F, oldCorrespondences.getPoints(),
 							newCorrespondences.getPoints(), point1, point2);
+
 				oldCorrespondences = Features2D(oldCorrespondences, point1);
 				newCorrespondences = Features2D(newCorrespondences, point2);
+
 				Features3D&& triangulated = triangulate(oldCorrespondences,
-							newCorrespondences, C, candidate.C);
+							newCorrespondences, C, keyframe.C);
+
 				vector<unsigned char> cheiralityMask;
-				cheiralityCheck(T_WC, candidate.F, triangulated,
-							cheiralityMask);
+				cheiralityCheck(T_WC, keyframe.F, triangulated, cheiralityMask);
+
 				std::cout << "inliers " << countInlier(cheiralityMask)
 							<< std::endl;
+
 				//Add 3d points to new points set
 				new3DPoints.addPoints(triangulated, cheiralityMask);
+
 				std::cout << "Triangulated " << triangulated.size() << " points"
 							<< std::endl;
 			}
+
 			//Erase processed candidate
-			it = candidates.erase(it);
+			it = keyframes.erase(it);
 		}
 		else
 		{
@@ -193,14 +252,9 @@ void BackendSFM::computeStructure(const cv::Mat& C, Features2D& trackedFeatures,
 			it++;
 		}
 	}
+
 	//Add triangulated points to points set
 	old3DPoints.addPoints(new3DPoints);
-	//Save new features in candidate list
-	if (newFeatures.size() > 0)
-	{
-		Candidates candidate(C, T_WC, newFeatures);
-		candidates.push_back(candidate);
-	}
 }
 
 void BackendSFM::cheiralityCheck(const Eigen::Affine3d& T1,

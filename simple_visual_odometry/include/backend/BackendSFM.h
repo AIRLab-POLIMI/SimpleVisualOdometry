@@ -59,13 +59,16 @@ private:
 	cv::Mat rodriguesFromPose(const Eigen::Affine3d& T);
 	cv::Mat translationFromPose(const Eigen::Affine3d& T);
 	cv::Mat computeCameraMatrix(const cv::Mat& rodrigues, const cv::Mat& t);
-	void computeStructure(const cv::Mat& C, Features2D& trackedFeatures,
+	void generateKeyframe2(const cv::Mat& C, Features2D& trackedFeatures,
 				Features2D& newFeatures);
+	void generateKeyframe(const cv::Mat& C, Features2D& trackedFeatures,
+					Features2D& newFeatures);
+	void computeStructure(const cv::Mat& C, Features2D& trackedFeatures);
 
 private:
-	struct Candidates
+	struct KeyFrame
 	{
-		Candidates(const cv::Mat& C, const Eigen::Affine3d F,
+		KeyFrame(const cv::Mat& C, const Eigen::Affine3d F,
 					const Features2D& features) :
 					C(C), F(F), features(features)
 		{
@@ -77,14 +80,19 @@ private:
 		Features2D features;
 	};
 
-	typedef std::list<Candidates> CandidatesList;
+	typedef std::list<KeyFrame> KeyFrameList;
 
 private:
 	//Features data
 	Features2D oldFeatures;
 	Features3D old3DPoints;
 	Features3D new3DPoints;
-	CandidatesList candidates;
+
+	// Keyframes
+	KeyFrameList keyframes;
+
+	// Stuff for triangulate
+	std::set<unsigned int> toTriangulate;
 
 private:
 	static const unsigned int minInitialFeatures = 100;
